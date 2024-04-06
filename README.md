@@ -1,11 +1,11 @@
 # ForOneAdvertisementSystem
  
 ## 介绍
- 这是 For One 制作组的推广组件, 提供给泰拉瑞亚模组制作者使用.
+ 这是 For One 制作组的推广组件, 提供给制作组的码师使用.
 
 ## 如何使用
 
-1. 将 ForOneAdvertisementSystem.dll 和 ForOneAdvertisementSystem.pdb (.pdb可以不用) 放入你的Mod中的 lib 文件夹下 (如果没有就创建一个)
+1. 将 ForOneAdvertisementSystem.dll 放入你的Mod中的 lib 文件夹下 (如果没有就创建一个)
 2. 在 build.txt 中添加一行: dllReferences = ForOneAdvertisementSystem  (当你的 mod 有多个 dllReferences 时可以用 ',' 隔开)
 3. 在你的项目中添加对此 dll 的引用<br/>
 	对于 VS, 在资源管理器中右键依赖项 -> 添加项目引用 -> 右下角浏览 -> 找到 lib 文件夹下的 dll 文件 -> 添加<br/>
