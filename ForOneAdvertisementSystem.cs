@@ -30,6 +30,7 @@ using ModPack = System.Collections.Generic.KeyValuePair<string, (Terraria.ModLoa
 using ModsDict = System.Collections.Generic.Dictionary<string, (Terraria.ModLoader.Mod Mod, System.Collections.Generic.Dictionary<string, object> ExtraValue)>;
 
 namespace ForOneAdvertisementSystem;
+
 /*
 public class ForOneAdvertisementSystem : Mod {
     public static string GetLocalizedAdvertisement() => ForOneAdvertisementSystemT.GetLocalizedAdvertisement();
@@ -40,8 +41,11 @@ public class ForOneAdvertisementSystem : Mod {
 }
 */
 
+/// <summary>
+/// For One åˆ¶ä½œç»„çš„æ¨å¹¿ç»„ä»¶
+/// </summary>
 public class ForOneAdvertisementSystem {
-    #region Load ÒÔ¼°²éÖØ
+    #region Load ä»¥åŠæŸ¥é‡
     static bool FirstLoad;
     static object? theAttribute;
     static ModsDict? Mods {
@@ -100,41 +104,37 @@ public class ForOneAdvertisementSystem {
         }
     }
     /// <summary>
-    ///  ¼ÓÔØÉÏÕâ¸öÍÆ¹ãÏµÍ³
+    ///  åŠ è½½ä¸Šè¿™ä¸ªæ¨å¹¿ç³»ç»Ÿ
     /// </summary>
-    /// <param name="mod">ÍÆ¹ãÔ´</param>
+    /// <param name="mod">æ¨å¹¿æº</param>
     public static void Load(Mod mod) {
         LoadInner(mod);
     }
     /// <summary>
-    ///  ¼ÓÔØÉÏÕâ¸öÍÆ¹ãÏµÍ³
+    ///  åŠ è½½ä¸Šè¿™ä¸ªæ¨å¹¿ç³»ç»Ÿ
     /// </summary>
-    /// <param name="mod">ÍÆ¹ãÔ´</param>
-    /// <param name="displayName">ÍÆ¹ãÔ´µÄÏÔÊ¾Ãû×Ö, Ä¬ÈÏÎª<see cref="Mod.DisplayName"/></param>
+    /// <param name="mod">æ¨å¹¿æº</param>
+    /// <param name="displayName">æ¨å¹¿æºçš„æ˜¾ç¤ºåå­—, é»˜è®¤ä¸º<see cref="Mod.DisplayName"/></param>
     public static void Load(Mod mod, string displayName) {
         LoadInner(mod, displayName);
     }
     /// <summary>
-    ///  ¼ÓÔØÉÏÕâ¸öÍÆ¹ãÏµÍ³
+    ///  åŠ è½½ä¸Šè¿™ä¸ªæ¨å¹¿ç³»ç»Ÿ
     /// </summary>
-    /// <param name="mod">ÍÆ¹ãÔ´</param>
-    /// <param name="localizedDisplayName">ÍÆ¹ãÔ´µÄÏÔÊ¾Ãû×Ö, ±¾µØ»¯°æ±¾</param>
+    /// <param name="mod">æ¨å¹¿æº</param>
+    /// <param name="localizedDisplayName">æ¨å¹¿æºçš„æ˜¾ç¤ºåå­—, æœ¬åœ°åŒ–ç‰ˆæœ¬</param>
     public static void Load(Mod mod, LocalizedText? localizedDisplayName) {
         LoadInner(mod, localizedDisplayName: localizedDisplayName);
     }
     /// <summary>
-    ///  ¼ÓÔØÉÏÕâ¸öÍÆ¹ãÏµÍ³
+    ///  åŠ è½½ä¸Šè¿™ä¸ªæ¨å¹¿ç³»ç»Ÿ
     /// </summary>
-    /// <param name="mod">ÍÆ¹ãÔ´</param>
-    /// <param name="displayNameGetter">ÍÆ¹ãÔ´µÄÏÔÊ¾Ãû×Ö, Î¯ÍĞ°æ±¾(Ã¿´Î½øÈëÊÀ½çÊ±µ÷ÓÃÒ»´Î)</param>
+    /// <param name="mod">æ¨å¹¿æº</param>
+    /// <param name="displayNameGetter">æ¨å¹¿æºçš„æ˜¾ç¤ºåå­—, å§”æ‰˜ç‰ˆæœ¬(æ¯æ¬¡è¿›å…¥ä¸–ç•Œæ—¶è°ƒç”¨ä¸€æ¬¡)</param>
     public static void Load(Mod mod, Func<string> displayNameGetter) {
         LoadInner(mod, displayNameGetter: displayNameGetter);
     }
-    /// <summary>
-    ///  ¼ÓÔØÉÏÕâ¸öÍÆ¹ãÏµÍ³
-    /// </summary>
-    /// <param name="mod">ÍÆ¹ãÔ´</param>
-    /// <param name="displayName">ÍÆ¹ãÔ´µÄÏÔÊ¾Ãû×Ö, ¿ÉÒÔÁô¿Õ(<see langword="null"/>), Ä¬ÈÏÎª<see cref="Mod.DisplayName"/></param>
+
     static void LoadInner(Mod mod, string? displayName = null, LocalizedText? localizedDisplayName = null, Func<string>? displayNameGetter = null) {
         AttributeCollection attributes = TypeDescriptor.GetAttributes(typeof(Main));
         foreach(var attr in attributes) {
@@ -150,10 +150,13 @@ public class ForOneAdvertisementSystem {
         }
         var mods = Mods;
         if(mods == null) {
-            // ²úÉú³åÍ», Ö±½ÓÍË³ö
+            // äº§ç”Ÿå†²çª, ç›´æ¥é€€å‡º
             return;
         }
-        // ÈôÒÑÓĞ´Ëmod, Ö±½ÓÍË³ö
+        if(mods.Count == 0) {
+            FirstLoad = true;
+        }
+        // è‹¥å·²æœ‰æ­¤mod, ç›´æ¥é€€å‡º
         if(mods.ContainsKey(mod.Name)) {
             return;
         }
@@ -171,14 +174,14 @@ public class ForOneAdvertisementSystem {
         if(!FirstLoad) {
             return;
         }
-        // ÒÔÏÂÄÚÈİÖ»Ö´ĞĞÒ»´Î
+        // ä»¥ä¸‹å†…å®¹åªæ‰§è¡Œä¸€æ¬¡
         Hook();
         savedContents = LoadData();
         LoadStart();
     }
     #endregion
 
-    #region ¹³×Ó
+    #region é’©å­
     static readonly List<Hook> hooks = [];
     static void Hook() {
         hooks.Add(new(typeof(ModContent).GetMethod("UnloadModContent", BindingFlags.Static | BindingFlags.NonPublic)!, On_ModContentUnloadModConetent));
@@ -203,7 +206,7 @@ public class ForOneAdvertisementSystem {
 
     #region AdvertisementSystem
 
-    #region ÉèÖÃ
+    #region è®¾ç½®
     static readonly string pingHostName = "tml-advertisement-space.notion.site";
     static readonly string mainUri = "https://tml-advertisement-space.notion.site/api/v3/loadCachedPageChunk";
     static readonly string subUri = "https://tml-advertisement-space.notion.site/api/v3/loadCachedPageChunks";
@@ -211,8 +214,8 @@ public class ForOneAdvertisementSystem {
     #endregion
 
     /// <summary>
-    /// »ñÈ¡ÍÆ¹ãÄÚÈİ
-    /// Ê¹ÓÃÇ°ĞèÏÈ¼ì²é<see cref="Finished"/>ÎªÕæ²Å¿ÉÒÔÊ¹ÓÃ
+    /// è·å–æ¨å¹¿å†…å®¹
+    /// ä½¿ç”¨å‰éœ€å…ˆæ£€æŸ¥<see cref="Finished"/>ä¸ºçœŸæ‰å¯ä»¥ä½¿ç”¨
     /// </summary>
     public static string GetLocalizedAdvertisement() {
         if(ModsCached == null || ModsCached.Count == 0) {
@@ -226,12 +229,12 @@ public class ForOneAdvertisementSystem {
     }
     static string GetLocalizedAdvertisementInner() {
         if(!Finished) {
-            throw new("Ê¹ÓÃ GetLocalizedAdvertisement Ç°ĞèÏÈ¼ì²é Finished !");
+            throw new("ä½¿ç”¨ GetLocalizedAdvertisement å‰éœ€å…ˆæ£€æŸ¥ Finished !");
         }
         string key = Language.ActiveCulture.Name;
         string defaultKey = GameCulture.DefaultCulture.Name;
         string defaultDefaultKey = "en-US";
-        var localizations = contents?.RandomTake(p => ModsCached!.ContainsKey(p.Key) ? 0f : p.Value.Weight).Value?.Localizations;
+        var localizations = GetRandomContent(contents)?.Localizations;
         if(localizations == null) {
             return string.Empty;
         }
@@ -246,7 +249,7 @@ public class ForOneAdvertisementSystem {
                 return localizations[defaultDefaultKey];
             }
         }
-        var savedLocalizations = savedContents?.RandomTake(p => ModsCached!.ContainsKey(p.Key) ? 0f : p.Value.Weight).Value?.Localizations;
+        var savedLocalizations = GetRandomContent(savedContents)?.Localizations;
         if(savedLocalizations != null) {
             if(savedLocalizations.ContainsKey(key)) {
                 return savedLocalizations[key];
@@ -263,21 +266,42 @@ public class ForOneAdvertisementSystem {
 
     class Content {
         public float Weight = 1f;
+        public float WeightActive;
+        public float WeightInactive;
         public Dictionary<string, string> Localizations = [];
     }
     /// <summary>
-    /// Ê¹ÓÃÇ°ĞèÏÈ¼ì²é<see cref="Succeeded"/>
+    /// ä½¿ç”¨å‰éœ€å…ˆæ£€æŸ¥<see cref="Succeeded"/>
     /// </summary>
     static Dictionary<string, Content>? contents;
     static Dictionary<string, Content>? savedContents;
+    static Content? GetRandomContent(Dictionary<string, Content>? theContents) {
+        object[] localMods = (object[])typeof(Main).Assembly.GetType("Terraria.ModLoader.Core.ModOrganizer")!.GetMethod("FindMods", BindingFlags.Static | BindingFlags.Public |BindingFlags.NonPublic)!.Invoke(null, [false])!;
+        HashSet<string>? localModsName = null;
+        if(localMods?.Length > 0) {
+            var getLocalModName = localMods[0].GetType().GetProperty("Name")!.GetGetMethod()!;
+            localModsName = [.. localMods.Select(m => (string)getLocalModName.Invoke(m, null)!)];
+        }
+        return theContents?.RandomTake(p => {
+            string modName = p.Key;
+            var content = p.Value;
+            if(ModLoader.TryGetMod(modName, out _)) {
+                return content.WeightActive;
+            }
+            if(localModsName?.Contains(modName) == true) {
+                return content.WeightInactive;
+            }
+            return content.Weight;
+        }).Value;
+    }
     static Task<LoadResult>? loadTask;
     static readonly CancellationTokenSource cancellationTokenSource = new();
     internal static bool Succeeded => loadTask != null && loadTask.IsCompletedSuccessfully && loadTask.Result == LoadResult.Success;
     internal static bool Failed => loadTask != null && loadTask.IsCompleted && !Succeeded;
     internal static bool Finished => loadTask != null && loadTask.IsCompleted;
     /// <summary>
-    /// °²È«Ê¹ÓÃ
-    /// Èç¹û<see cref="loadTask"/>Îª¿ÕÔò¿ªÊ¼ÈÎÎñ
+    /// å®‰å…¨ä½¿ç”¨
+    /// å¦‚æœ<see cref="loadTask"/>ä¸ºç©ºåˆ™å¼€å§‹ä»»åŠ¡
     /// </summary>
     internal static void LoadStart() {
         if(loadTask != null) {
@@ -294,11 +318,12 @@ public class ForOneAdvertisementSystem {
         cancellationTokenSource.Cancel();
         loadTask?.Dispose();
         loadTask = null;
+        Mods?.Clear();
     }
-    #region Êı¾İ´æ´¢
+    #region æ•°æ®å­˜å‚¨
     /// <summary>
-    /// Êı¾İ±£´æµÄÂ·¾¶
-    /// µ±Á¬½Ó²»³É¹¦Ê±µ÷ÓÃ±£´æµÄÊı¾İ
+    /// æ•°æ®ä¿å­˜çš„è·¯å¾„
+    /// å½“è¿æ¥ä¸æˆåŠŸæ—¶è°ƒç”¨ä¿å­˜çš„æ•°æ®
     /// </summary>
     internal static string DataPath {
         get {
@@ -307,16 +332,16 @@ public class ForOneAdvertisementSystem {
         }
     }
     /// <summary>
-    /// ½«<paramref name="data"/>´æÈë¶ÔÓ¦Â·¾¶µÄÎÄ¼şÖĞ
+    /// å°†<paramref name="data"/>å­˜å…¥å¯¹åº”è·¯å¾„çš„æ–‡ä»¶ä¸­
     /// </summary>
     /// <param name="data"></param>
     static void SaveData(Dictionary<string, Content>? data) {
         File.WriteAllText(DataPath, JsonConvert.SerializeObject(data));
     }
     /// <summary>
-    /// Èç¹û¶ÔÓ¦Â·¾¶ÓĞÎÄ¼ş, ½«Æä¼ÓÔØ³öÀ´²¢·µ»Ø
-    /// ·ñÔò·µ»Ø¿Õ
-    /// ¼ÓÔØ³ö´íÒ²»á·µ»Ø¿Õ
+    /// å¦‚æœå¯¹åº”è·¯å¾„æœ‰æ–‡ä»¶, å°†å…¶åŠ è½½å‡ºæ¥å¹¶è¿”å›
+    /// å¦åˆ™è¿”å›ç©º
+    /// åŠ è½½å‡ºé”™ä¹Ÿä¼šè¿”å›ç©º
     /// </summary>
     static Dictionary<string, Content>? LoadData() {
         string path = DataPath;
@@ -338,35 +363,35 @@ public class ForOneAdvertisementSystem {
 
     internal enum LoadResult {
         /// <summary>
-        /// Ä¬ÈÏÖµ, Õ¼Î»·û, ÔİÊ±²»ÓÃÓÚ·µ»ØÖµ
+        /// é»˜è®¤å€¼, å ä½ç¬¦, æš‚æ—¶ä¸ç”¨äºè¿”å›å€¼
         /// </summary>
         None,
         /// <summary>
-        /// ³É¹¦
+        /// æˆåŠŸ
         /// </summary>
         Success,
         /// <summary>
-        /// ´«Èë²ÎÊı²»ÕıÈ·
+        /// ä¼ å…¥å‚æ•°ä¸æ­£ç¡®
         /// </summary>
         WrongParameters,
         /// <summary>
-        /// ÏìÓ¦²»ÊÇ³É¹¦Âë
+        /// å“åº”ä¸æ˜¯æˆåŠŸç 
         /// </summary>
         NotSuccessStatusCode,
         /// <summary>
-        /// ÏàÓ¦µÄ¸ñÊ½²»ÕıÈ·
+        /// ç›¸åº”çš„æ ¼å¼ä¸æ­£ç¡®
         /// </summary>
         WrongFormat,
         /// <summary>
-        /// json½âÂë³öÏÖÎÊÌâ
+        /// jsonè§£ç å‡ºç°é—®é¢˜
         /// </summary>
         ErrorInDeserialize,
         /// <summary>
-        /// contentIdÔÚµÚ¶ş´ÎÖĞÇëÇóÃ»ÕÒµ½
+        /// contentIdåœ¨ç¬¬äºŒæ¬¡ä¸­è¯·æ±‚æ²¡æ‰¾åˆ°
         /// </summary>
         ErrorContentId,
         /// <summary>
-        /// ÒâÁÏÖ®ÍâµÄ´íÎó
+        /// æ„æ–™ä¹‹å¤–çš„é”™è¯¯
         /// </summary>
         UnexpectedError,
     }
@@ -375,7 +400,7 @@ public class ForOneAdvertisementSystem {
             return LoadResult.WrongParameters;
         }
 
-        #region ÏÈPingÒ»ÏÂ²âÊÔ
+        #region å…ˆPingä¸€ä¸‹æµ‹è¯•
         //HttpClient? httpClient = null;
         try {
             PingReply pingReply = new Ping().Send(pingHostName);
@@ -391,8 +416,8 @@ public class ForOneAdvertisementSystem {
         contents = [];
         try {
             using HttpClient httpClient = new();
-            #region µÚÒ»¸öPost: »ñÈ¡Ö÷Ò³ÄÚÈİ(°üº¬ÓĞËùÓĞµÄ±¾µØ»¯¼üÖµ)
-            #region ÉèÖÃÇëÇó
+            #region ç¬¬ä¸€ä¸ªPost: è·å–ä¸»é¡µå†…å®¹(åŒ…å«æœ‰æ‰€æœ‰çš„æœ¬åœ°åŒ–é”®å€¼)
+            #region è®¾ç½®è¯·æ±‚
             using HttpContent mainRequest = new StringContent($$"""
             {
                 "page": {
@@ -408,19 +433,19 @@ public class ForOneAdvertisementSystem {
             """);
             mainRequest.Headers.ContentType = new("application/json");
             #endregion
-            #region ·¢ËÍPostÇëÇó, »ñµÃÏìÓ¦µÄÖ÷Ìå
+            #region å‘é€Postè¯·æ±‚, è·å¾—å“åº”çš„ä¸»ä½“
             using HttpResponseMessage mainResponse = await httpClient.PostAsync(mainUri, mainRequest);
             if(!mainResponse.IsSuccessStatusCode) {
                 return LoadResult.NotSuccessStatusCode;
             }
             string mainResponseBody = await mainResponse.Content.ReadAsStringAsync();
             #endregion
-            #region ½âÂëjson
+            #region è§£ç json
             if(JsonConvert.DeserializeObject(mainResponseBody) is not JObject mainJson) {
                 return LoadResult.ErrorInDeserialize;
             }
             #endregion
-            #region ½âÎöÏìÓ¦Êı¾İ
+            #region è§£æå“åº”æ•°æ®
             JToken? mainBlocks = mainJson["recordMap"]?["block"];
             if(mainBlocks == null) {
                 return LoadResult.WrongFormat;
@@ -431,29 +456,29 @@ public class ForOneAdvertisementSystem {
                 if(block is not JProperty blockProperty) {
                     continue;
                 }
-                #region ¶¨Òå¾Ö²¿±äÁ¿
+                #region å®šä¹‰å±€éƒ¨å˜é‡
                 string? modBlockId = null, spaceId = null;
                 string? modName;
                 #endregion
                 JToken? value = blockProperty.Value["value"];
-                #region Ìø¹ıÈÎºÎtype²»ÊÇtoggleµÄ¿é
+                #region è·³è¿‡ä»»ä½•typeä¸æ˜¯toggleçš„å—
                 if(value?["type"]?.ToString() != "toggle") {
                     continue;
                 }
                 #endregion
-                #region »ñÈ¡´Ëtoggle¿éµÄÎÄ±¾Öµ, ×÷ÎªÄ£×éÃû
+                #region è·å–æ­¤toggleå—çš„æ–‡æœ¬å€¼, ä½œä¸ºæ¨¡ç»„å
                 var modToken = value["properties"]?["title"]?[0]?[0];
                 if(modToken is not JValue modNameValue) {
-                    continue;//²»Ö±½Ó·µ»Ø, ÓĞ¿ÉÄÜÕâ¸ö¿éÈ·Êµ²»³¤ÕâÑù
+                    continue;//ä¸ç›´æ¥è¿”å›, æœ‰å¯èƒ½è¿™ä¸ªå—ç¡®å®ä¸é•¿è¿™æ ·
                 }
                 modName = modNameValue.ToString();
-                #region Èç¹û³öÏÖÖØ¸´ÖµµÄ¼üÖµ, Ö±½ÓÌø¹ı, ºöÂÔËü
+                #region å¦‚æœå‡ºç°é‡å¤å€¼çš„é”®å€¼, ç›´æ¥è·³è¿‡, å¿½ç•¥å®ƒ
                 if(modContents.ContainsKey(modName)) {
                     continue;
                 }
                 #endregion
                 #endregion
-                #region »ñÈ¡´Ëtoggle¿éµÄblockId, spaceIdºÍcontents, ²¢½«contents´æÈë×ÖµäÒÔ±ãºóĞøÊ¹ÓÃ
+                #region è·å–æ­¤toggleå—çš„blockId, spaceIdå’Œcontents, å¹¶å°†contentså­˜å…¥å­—å…¸ä»¥ä¾¿åç»­ä½¿ç”¨
                 modBlockId = blockProperty.Name;
                 bool errorInContentFormat = false;
                 string[]? blockContents = value["content"]?.Select(t => {
@@ -463,20 +488,20 @@ public class ForOneAdvertisementSystem {
                     }
                     return v.ToString();
                 }).ToArray();
-                if (blockContents == null || errorInContentFormat) {
+                if(blockContents == null || errorInContentFormat) {
                     continue;
                 }
                 if(value["space_id"] is not JValue spaceIdValue) {
                     return LoadResult.WrongFormat;
                 }
                 spaceId = spaceIdValue.ToString();
-                //Ã»ÓĞÄÚÈİ´ú±íÓĞÕâ¸ötoggle¿éµ«toggle¿éÏÂÃ»¶«Î÷, ¿ÉÈÏÎª»¹Ã»ÓĞËüµÄÄÚÈİ, Ö±½ÓÌø¹ı
+                //æ²¡æœ‰å†…å®¹ä»£è¡¨æœ‰è¿™ä¸ªtoggleå—ä½†toggleå—ä¸‹æ²¡ä¸œè¥¿, å¯è®¤ä¸ºè¿˜æ²¡æœ‰å®ƒçš„å†…å®¹, ç›´æ¥è·³è¿‡
                 if(blockContents.Length == 0) {
                     continue;
                 }
                 modContents[modName] = blockContents;
                 #endregion
-                #region ½«ÏÂÒ»¸öÇëÇóµÄÊı×éÔªËØ·ÅÈë requests ÖĞ
+                #region å°†ä¸‹ä¸€ä¸ªè¯·æ±‚çš„æ•°ç»„å…ƒç´ æ”¾å…¥ requests ä¸­
                 requests.Add($$"""
                     {
                         "page": {
@@ -495,8 +520,8 @@ public class ForOneAdvertisementSystem {
             }
             #endregion
             #endregion
-            #region µÚ¶ş¸öPost: »ñµÃÃ¿¸öModÏÂµÄ±¾µØ»¯¿é
-            #region ÉèÖÃÇëÇó
+            #region ç¬¬äºŒä¸ªPost: è·å¾—æ¯ä¸ªModä¸‹çš„æœ¬åœ°åŒ–å—
+            #region è®¾ç½®è¯·æ±‚
             using HttpContent subRequest = new StringContent($$"""
                 {
                     "requests": [
@@ -506,19 +531,19 @@ public class ForOneAdvertisementSystem {
                 """);
             subRequest.Headers.ContentType = new("application/json");
             #endregion
-            #region ·¢ËÍPostÇëÇó, »ñµÃÏìÓ¦µÄÖ÷Ìå
+            #region å‘é€Postè¯·æ±‚, è·å¾—å“åº”çš„ä¸»ä½“
             using HttpResponseMessage subResponse = await httpClient.PostAsync(subUri, subRequest);
             if(!subResponse.IsSuccessStatusCode) {
                 return LoadResult.NotSuccessStatusCode;
             }
             string subResponseBody = await subResponse.Content.ReadAsStringAsync();
             #endregion
-            #region ½âÂëjson
+            #region è§£ç json
             if(JsonConvert.DeserializeObject(subResponseBody) is not JObject subJson) {
                 return LoadResult.ErrorInDeserialize;
             }
             #endregion
-            #region ½âÎöÏìÓ¦Êı¾İ
+            #region è§£æå“åº”æ•°æ®
             requests.Clear();
             JToken? subBlocks = subJson["recordMap"]?["block"];
             if(subBlocks == null) {
@@ -529,7 +554,7 @@ public class ForOneAdvertisementSystem {
                 modLocalizationContents.Add(modName, []);
                 Content content = new();
                 string[] modBlockContents = modContents[modName];
-                //´ËÊ± blockContents ÖĞ×°µÄÊÇ Ä³Ğ©ÌØÊâÄÚÈİºÍ±¾µØ»¯¿é ¶ÔÓ¦µÄ blockId
+                //æ­¤æ—¶ blockContents ä¸­è£…çš„æ˜¯ æŸäº›ç‰¹æ®Šå†…å®¹å’Œæœ¬åœ°åŒ–å— å¯¹åº”çš„ blockId
                 foreach(int i in modBlockContents.Length) {
                     string blockId = modBlockContents[i];
                     JToken? block = subBlocks[blockId];
@@ -539,7 +564,7 @@ public class ForOneAdvertisementSystem {
                     /*
                     var contentToken = block["value"]?["properties"];
                     if(contentToken is not JArray contentArray) {
-                        return LoadResult.WrongFormat;//È·¶¨ÕâÊÇÎÒÃÇÒªÕÒµÄ¿éµ«ÊÇÃ»ÓĞ¶ÔÓ¦Ïî, Ôò¿Ï¶¨ÊÇ¸ñÊ½´íÎó
+                        return LoadResult.WrongFormat;//ç¡®å®šè¿™æ˜¯æˆ‘ä»¬è¦æ‰¾çš„å—ä½†æ˜¯æ²¡æœ‰å¯¹åº”é¡¹, åˆ™è‚¯å®šæ˜¯æ ¼å¼é”™è¯¯
                     }
                     contents[i] = string.Join(null, contentArray.Select(t => {
                         return t is not JArray a ? null :
@@ -557,7 +582,15 @@ public class ForOneAdvertisementSystem {
                         content.Weight = weight;
                         continue;
                     }
-                    #region Ìø¹ıÈÎºÎtype²»ÊÇtoggleµÄ¿é
+                    if(str.StartsWith("weightActive:") && float.TryParse(str["weightActive:".Length..].Trim(), out var weightActive)) {
+                        content.WeightActive = weightActive;
+                        continue;
+                    }
+                    if(str.StartsWith("weightInactive:") && float.TryParse(str["weightInactive:".Length..].Trim(), out var weightInactive)) {
+                        content.WeightInactive = weightInactive;
+                        continue;
+                    }
+                    #region è·³è¿‡ä»»ä½•typeä¸æ˜¯toggleçš„å—
                     if(block["value"]?["type"]?.ToString() != "toggle") {
                         continue;
                     }
@@ -573,19 +606,19 @@ public class ForOneAdvertisementSystem {
                         }
                         return v.ToString();
                     }).ToArray();
-                    if (blockContents == null || errorInContentFormat) {
+                    if(blockContents == null || errorInContentFormat) {
                         continue;
                     }
                     if(block["value"]?["space_id"] is not JValue spaceIdValue) {
                         return LoadResult.WrongFormat;
                     }
-                    //Ã»ÓĞÄÚÈİ´ú±íÓĞÕâ¸ötoggle¿éµ«toggle¿éÏÂÃ»¶«Î÷, ¿ÉÈÏÎª»¹Ã»ÓĞËüµÄÄÚÈİ, Ö±½ÓÌø¹ı
+                    //æ²¡æœ‰å†…å®¹ä»£è¡¨æœ‰è¿™ä¸ªtoggleå—ä½†toggleå—ä¸‹æ²¡ä¸œè¥¿, å¯è®¤ä¸ºè¿˜æ²¡æœ‰å®ƒçš„å†…å®¹, ç›´æ¥è·³è¿‡
                     if(blockContents.Length == 0) {
                         continue;
                     }
                     modLocalizationContents[modName].Add(str, blockContents);
                     var spaceId = spaceIdValue.ToString();
-                    #region ½«ÏÂÒ»¸öÇëÇóµÄÊı×éÔªËØ·ÅÈë requests ÖĞ
+                    #region å°†ä¸‹ä¸€ä¸ªè¯·æ±‚çš„æ•°ç»„å…ƒç´ æ”¾å…¥ requests ä¸­
                     requests.Add($$"""
                         {
                             "page": {
@@ -606,8 +639,8 @@ public class ForOneAdvertisementSystem {
             }
             #endregion
             #endregion
-            #region µÚÈı¸öPost: »ñµÃÃ¿¸ö±¾µØ»¯¿éÏÂµÄÄÚÈİ
-            #region ÉèÖÃÇëÇó
+            #region ç¬¬ä¸‰ä¸ªPost: è·å¾—æ¯ä¸ªæœ¬åœ°åŒ–å—ä¸‹çš„å†…å®¹
+            #region è®¾ç½®è¯·æ±‚
             using HttpContent lowRequest = new StringContent($$"""
                 {
                     "requests": [
@@ -617,19 +650,19 @@ public class ForOneAdvertisementSystem {
                 """);
             lowRequest.Headers.ContentType = new("application/json");
             #endregion
-            #region ·¢ËÍPostÇëÇó, »ñµÃÏìÓ¦µÄÖ÷Ìå
+            #region å‘é€Postè¯·æ±‚, è·å¾—å“åº”çš„ä¸»ä½“
             using HttpResponseMessage lowResponse = await httpClient.PostAsync(subUri, lowRequest);
             if(!lowResponse.IsSuccessStatusCode) {
                 return LoadResult.NotSuccessStatusCode;
             }
             string lowResponseBody = await lowResponse.Content.ReadAsStringAsync();
             #endregion
-            #region ½âÂëjson
+            #region è§£ç json
             if(JsonConvert.DeserializeObject(lowResponseBody) is not JObject lowJson) {
                 return LoadResult.ErrorInDeserialize;
             }
             #endregion
-            #region ½âÎöÏìÓ¦Êı¾İ
+            #region è§£æå“åº”æ•°æ®
             JToken? lowBlocks = lowJson["recordMap"]?["block"];
             if(lowBlocks == null) {
                 return LoadResult.WrongFormat;
@@ -637,7 +670,7 @@ public class ForOneAdvertisementSystem {
             foreach(string modName in modLocalizationContents.Keys) {
                 foreach(string localization in modLocalizationContents[modName].Keys) {
                     string[] localizationBlockContents = modLocalizationContents[modName][localization];
-                    // ´ËÊ± localizationBlockContents ÖĞ×°µÄÊÇÄÚÈİ¶ÔÓ¦µÄ blockId, ÏÖÔÚ½«ËüÃÇ×ª»»Îª¶ÔÓ¦µÄÊµ¼ÊÄÚÈİ
+                    // æ­¤æ—¶ localizationBlockContents ä¸­è£…çš„æ˜¯å†…å®¹å¯¹åº”çš„ blockId, ç°åœ¨å°†å®ƒä»¬è½¬æ¢ä¸ºå¯¹åº”çš„å®é™…å†…å®¹
                     foreach(int blockIndex in localizationBlockContents.Length) {
                         string blockId = localizationBlockContents[blockIndex];
                         JToken? block = lowBlocks[blockId];
@@ -646,7 +679,7 @@ public class ForOneAdvertisementSystem {
                         }
                         var contentToken = block["value"]?["properties"]?["title"];
                         if(contentToken is not JArray contentArray) {
-                            return LoadResult.WrongFormat;//È·¶¨ÕâÊÇÎÒÃÇÒªÕÒµÄ¿éµ«ÊÇÃ»ÓĞ¶ÔÓ¦Ïî, Ôò¿Ï¶¨ÊÇ¸ñÊ½´íÎó
+                            return LoadResult.WrongFormat;//ç¡®å®šè¿™æ˜¯æˆ‘ä»¬è¦æ‰¾çš„å—ä½†æ˜¯æ²¡æœ‰å¯¹åº”é¡¹, åˆ™è‚¯å®šæ˜¯æ ¼å¼é”™è¯¯
                         }
                         localizationBlockContents[blockIndex] = string.Join(null, contentArray.Select(t =>
                             t is not JArray a || a.Count == 0 || a[0] is not JValue v ? null :
@@ -684,25 +717,25 @@ internal class AdvertisementNotification : IInGameNotification {
     public const int KeepTimeInSecond = 10 * 2;
     public const int MaxTimeLeft = KeepTimeInSecond * 60;
     /// <summary>
-    /// ´Ó×îĞ¡±äµ½×î´ó»òÕß´Ó×î´ó±äµ½×îĞ¡µÄÊ±¼ä
+    /// ä»æœ€å°å˜åˆ°æœ€å¤§æˆ–è€…ä»æœ€å¤§å˜åˆ°æœ€å°çš„æ—¶é—´
     /// </summary>
     public const int ScaleTime = 18;
     /// <summary>
-    /// ´Ó½øÈëÊÀ½çµ½¿ªÊ¼ÏÔÊ¾µÄ×îĞ¡ÑÓ³Ù
+    /// ä»è¿›å…¥ä¸–ç•Œåˆ°å¼€å§‹æ˜¾ç¤ºçš„æœ€å°å»¶è¿Ÿ
     /// </summary>
     public const int StartDelay = 60;
-    [Range(0f, 1f)] //!×¢Òâ²»ÊÇConfigÖĞµÄÄÇ¸öRange
+    [Range(0f, 1f)] //!æ³¨æ„ä¸æ˜¯Configä¸­çš„é‚£ä¸ªRange
     public const float DisappearScale = 0.4f;
     public int timeLeft = MaxTimeLeft;
     public int startDelayNow = StartDelay;
     public float borderX = 20f;
     public float borderY = 8f;
 
-    readonly DynamicSpriteFont font = FontAssets.ItemStack.Value;    //×ÖÌå
+    readonly DynamicSpriteFont font = FontAssets.ItemStack.Value;    //å­—ä½“
     string? _text;
     TextSnippet[]? snippets;
     /// <summary>
-    /// ¾­¹ıËõ·ÅµÄÎÄ×Ö´óĞ¡
+    /// ç»è¿‡ç¼©æ”¾çš„æ–‡å­—å¤§å°
     /// </summary>
     Vector2 textSize;
     bool _textSet;
@@ -740,12 +773,14 @@ internal class AdvertisementNotification : IInGameNotification {
         Scale < DisappearScale ? 0f :
         (Scale - DisappearScale) / (1f - DisappearScale);
 
+    Task? SetTextTask;
+
     public void Update() {
         if(startDelayNow > 0) {
             startDelayNow -= 1;
             return;
         }
-        if(!ForOneAdvertisementSystem.Finished) {
+        if(!ForOneAdvertisementSystem.Finished && SetTextTask?.IsCompleted != true) {
             return;
         }
         timeLeft -= 1;
@@ -761,19 +796,19 @@ internal class AdvertisementNotification : IInGameNotification {
         if(opacity <= 0f) {
             return;
         }
-        Vector2 scale = new(Scale); //Ëõ·Å
-        SetText();  //ÄÚÈİ
+        Vector2 scale = new(Scale); //ç¼©æ”¾
+        SetTextTask ??= Task.Run(SetText);
         if(snippets == null) {
             return;
         }
         textSize = ChatManager.GetStringSize(font, snippets, scale, maxWidth);
-        //°å°åµÄ·½¿ò
+        //æ¿æ¿çš„æ–¹æ¡†
         Rectangle panelRect = NewRectangle(bottomAnchorPosition, textSize + new Vector2(borderX, borderY) * 2 * scale, new Vector2(.5f, 1f));
-        //»ñµÃÊó±êÊÇ·ñÔÚ°å°åÉÏ, Èç¹ûÔÚÔò×öÒ»Ğ©ÊÂÇé
+        //è·å¾—é¼ æ ‡æ˜¯å¦åœ¨æ¿æ¿ä¸Š, å¦‚æœåœ¨åˆ™åšä¸€äº›äº‹æƒ…
         bool hovering = panelRect.Contains(Main.MouseScreen.ToPoint());
         OnMouseOver(ref hovering);
-        //»­³ö°å°å, Èç¹ûÊó±êÔÚ°å°åÉÏÔòÑÕÉ«µ­Ò»µã
-        Utils.DrawInvBG(spriteBatch, panelRect, new Color(64, 109, 164) * (hovering ? 0.75f : 0.5f) * opacity);//UIµÄÀ¶É«
+        //ç”»å‡ºæ¿æ¿, å¦‚æœé¼ æ ‡åœ¨æ¿æ¿ä¸Šåˆ™é¢œè‰²æ·¡ä¸€ç‚¹
+        Utils.DrawInvBG(spriteBatch, panelRect, new Color(64, 109, 164) * (hovering ? 0.75f : 0.5f) * opacity);//UIçš„è“è‰²
         Color color = Color.LightCyan;
         color.A = Main.mouseTextColor;
         color *= opacity;
@@ -890,7 +925,7 @@ internal static class MiscHelper {
                     v4.X, v4.Y, v4.Z, v4.W);
     }
     public static float NewLerpValue(float val, bool clamped, LerpType type, params float[] pars) {
-        #region ±ß½ç¼ì²é
+        #region è¾¹ç•Œæ£€æŸ¥
         if(clamped) {
             if(val <= 0) {
                 return 0;
@@ -910,7 +945,7 @@ internal static class MiscHelper {
         case LerpType.Linear:
             return val;
         case LerpType.Quadratic:
-            //pars[0]:¶ş´Îº¯ÊıµÄ¼«µã
+            //pars[0]:äºŒæ¬¡å‡½æ•°çš„æç‚¹
             if(pars.Length <= 0) {
                 throw new TargetParameterCountException("pars not enough");
             }
@@ -919,15 +954,15 @@ internal static class MiscHelper {
             }
             return val * (val - 2 * pars[0]) / (1 - 2 * pars[0]);
         case LerpType.Cubic:
-            //pars[0], pars[1]:Èı´Îº¯ÊıµÄÁ½¸ö¼«µã
+            //pars[0], pars[1]:ä¸‰æ¬¡å‡½æ•°çš„ä¸¤ä¸ªæç‚¹
             if(pars.Length <= 1) {
                 throw new TargetParameterCountException("pars not enough");
             }
             return ((val - 3 * (pars[0] + pars[1]) / 2) * val + 3 * pars[0] * pars[1]) * val /
                 (1 - 3 * (pars[0] + pars[1]) / 2 + 3 * pars[0] * pars[1]);
         case LerpType.CubicByK:
-            //pars[0], pars[1]:Á½´¦µÄĞ±ÂÊ
-            //par[2], par[3](Èô´æÔÚ):¿í¶ÈºÍ¸ß¶È
+            //pars[0], pars[1]:ä¸¤å¤„çš„æ–œç‡
+            //par[2], par[3](è‹¥å­˜åœ¨):å®½åº¦å’Œé«˜åº¦
             if(pars.Length < 2) {
                 throw new TargetParameterCountException("pars not enough");
             }
@@ -953,7 +988,7 @@ internal static class MiscHelper {
             }
             return (((da.GetDeterminant() * val + db.GetDeterminant()) * val + dc.GetDeterminant()) * val + dd.GetDeterminant()) / d0.GetDeterminant() / par3;
         case LerpType.Sin:
-            //pars[0], pars[1] : Á½ÏàÎ»µÄËÄ·ÖÖ®Ò»ÖÜÆÚÊı
+            //pars[0], pars[1] : ä¸¤ç›¸ä½çš„å››åˆ†ä¹‹ä¸€å‘¨æœŸæ•°
             if(pars.Length < 2) {
                 throw new TargetParameterCountException("pars not enough");
             }
@@ -973,7 +1008,7 @@ internal static class MiscHelper {
     public static Vector4 NewVector4(double x, double y, double z, double w) => new((float)x, (float)y, (float)z, (float)w);
     public static double NewLerpValue(double val, bool clamped, LerpType type, params double[] pars) {
 
-        #region ±ß½ç¼ì²é
+        #region è¾¹ç•Œæ£€æŸ¥
         if(clamped) {
             if(val <= 0) {
                 return 0;
@@ -993,7 +1028,7 @@ internal static class MiscHelper {
         case LerpType.Linear:
             return val;
         case LerpType.Quadratic:
-            //pars[0]:¶ş´Îº¯ÊıµÄ¼«µã
+            //pars[0]:äºŒæ¬¡å‡½æ•°çš„æç‚¹
             if(pars.Length <= 0) {
                 throw new TargetParameterCountException("pars not enough");
             }
@@ -1002,15 +1037,15 @@ internal static class MiscHelper {
             }
             return val * (val - 2 * pars[0]) / (1 - 2 * pars[0]);
         case LerpType.Cubic:
-            //pars[0], pars[1]:Èı´Îº¯ÊıµÄÁ½¸ö¼«µã
+            //pars[0], pars[1]:ä¸‰æ¬¡å‡½æ•°çš„ä¸¤ä¸ªæç‚¹
             if(pars.Length <= 1) {
                 throw new TargetParameterCountException("pars not enough");
             }
             return ((val - 3 * (pars[0] + pars[1]) / 2) * val + 3 * pars[0] * pars[1]) * val /
                 (1 - 3 * (pars[0] + pars[1]) / 2 + 3 * pars[0] * pars[1]);
         case LerpType.CubicByK:
-            //pars[0], pars[1]:Á½´¦µÄĞ±ÂÊ
-            //par[2], par[3](Èô´æÔÚ):¿í¶ÈºÍ¸ß¶È
+            //pars[0], pars[1]:ä¸¤å¤„çš„æ–œç‡
+            //par[2], par[3](è‹¥å­˜åœ¨):å®½åº¦å’Œé«˜åº¦
             if(pars.Length < 2) {
                 throw new TargetParameterCountException("pars not enough");
             }
@@ -1036,7 +1071,7 @@ internal static class MiscHelper {
             }
             return (((da.GetDeterminant() * val + db.GetDeterminant()) * val + dc.GetDeterminant()) * val + dd.GetDeterminant()) / d0.GetDeterminant() / par3;
         case LerpType.Sin:
-            //pars[0], pars[1] : Á½ÏàÎ»µÄËÄ·ÖÖ®Ò»ÖÜÆÚÊı
+            //pars[0], pars[1] : ä¸¤ç›¸ä½çš„å››åˆ†ä¹‹ä¸€å‘¨æœŸæ•°
             if(pars.Length < 2) {
                 throw new TargetParameterCountException("pars not enough");
             }
