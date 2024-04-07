@@ -182,12 +182,16 @@ public class ForOneAdvertisementSystem {
     #endregion
 
     #region 钩子
-    static readonly List<Hook> hooks = [];
+    static List<Hook>? hooks;
     static void Hook() {
+        hooks = [];
         hooks.Add(new(typeof(ModContent).GetMethod("UnloadModContent", BindingFlags.Static | BindingFlags.NonPublic)!, On_ModContentUnloadModConetent));
         hooks.Add(new(typeof(PlayerLoader).GetMethod(nameof(PlayerLoader.OnEnterWorld), BindingFlags.Static | BindingFlags.Public)!, On_PlayerLoaderOnEnterWorld));
     }
     static void Unhook() {
+        if (hooks == null) {
+            return;
+        }
         foreach(var hook in hooks) {
             hook.Undo();
             hook.Dispose();
@@ -207,10 +211,10 @@ public class ForOneAdvertisementSystem {
     #region AdvertisementSystem
 
     #region 设置
-    static readonly string pingHostName = "tml-advertisement-space.notion.site";
-    static readonly string mainUri = "https://tml-advertisement-space.notion.site/api/v3/loadCachedPageChunk";
-    static readonly string subUri = "https://tml-advertisement-space.notion.site/api/v3/loadCachedPageChunks";
-    static readonly string notionPageId = "06eafd8d-6f9e-4c4f-8674-d4d01557d95b";
+    const string pingHostName = "tml-advertisement-space.notion.site";
+    const string mainUri = "https://tml-advertisement-space.notion.site/api/v3/loadCachedPageChunk";
+    const string subUri = "https://tml-advertisement-space.notion.site/api/v3/loadCachedPageChunks";
+    const string notionPageId = "06eafd8d-6f9e-4c4f-8674-d4d01557d95b";
     #endregion
 
     /// <summary>
@@ -234,6 +238,7 @@ public class ForOneAdvertisementSystem {
         string key = Language.ActiveCulture.Name;
         string defaultKey = GameCulture.DefaultCulture.Name;
         string defaultDefaultKey = "en-US";
+        string defaultDefaultDefaultKey = "zh-Hans";
         var localizations = GetRandomContent(contents)?.Localizations;
         if(localizations == null) {
             return string.Empty;
@@ -248,6 +253,12 @@ public class ForOneAdvertisementSystem {
             else if(localizations.ContainsKey(defaultDefaultKey)) {
                 return localizations[defaultDefaultKey];
             }
+            else if(localizations.ContainsKey(defaultDefaultDefaultKey)) {
+                return localizations[defaultDefaultDefaultKey];
+            }
+            else if (localizations.Count > 0) {
+                return localizations.Values.First();
+            }
         }
         var savedLocalizations = GetRandomContent(savedContents)?.Localizations;
         if(savedLocalizations != null) {
@@ -259,6 +270,12 @@ public class ForOneAdvertisementSystem {
             }
             else if(savedLocalizations.ContainsKey(defaultDefaultKey)) {
                 return savedLocalizations[defaultDefaultKey];
+            }
+            else if(savedLocalizations.ContainsKey(defaultDefaultDefaultKey)) {
+                return savedLocalizations[defaultDefaultDefaultKey];
+            }
+            else if (savedLocalizations.Count > 0) {
+                return savedLocalizations.Values.First();
             }
         }
         return string.Empty;
@@ -295,7 +312,7 @@ public class ForOneAdvertisementSystem {
         }).Value;
     }
     static Task<LoadResult>? loadTask;
-    static readonly CancellationTokenSource cancellationTokenSource = new();
+    static CancellationTokenSource? cancellationTokenSource;
     internal static bool Succeeded => loadTask != null && loadTask.IsCompletedSuccessfully && loadTask.Result == LoadResult.Success;
     internal static bool Failed => loadTask != null && loadTask.IsCompleted && !Succeeded;
     internal static bool Finished => loadTask != null && loadTask.IsCompleted;
@@ -307,7 +324,7 @@ public class ForOneAdvertisementSystem {
         if(loadTask != null) {
             return;
         }
-        loadTask = Task.Run(() => LoadAsync(notionPageId), cancellationTokenSource.Token);
+        loadTask = Task.Run(() => LoadAsync(notionPageId), (cancellationTokenSource ??= new()).Token);
         loadTask.ContinueWith(task => {
             if(task.IsCompletedSuccessfully && contents != null) {
                 SaveData(contents);
@@ -315,7 +332,7 @@ public class ForOneAdvertisementSystem {
         }, cancellationTokenSource.Token);
     }
     static void UnloadThis() {
-        cancellationTokenSource.Cancel();
+        cancellationTokenSource?.Cancel();
         loadTask?.Dispose();
         loadTask = null;
         Mods?.Clear();
