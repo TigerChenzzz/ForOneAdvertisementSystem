@@ -189,7 +189,7 @@ public class ForOneAdvertisementSystem {
         hooks.Add(new(typeof(PlayerLoader).GetMethod(nameof(PlayerLoader.OnEnterWorld), BindingFlags.Static | BindingFlags.Public)!, On_PlayerLoaderOnEnterWorld));
     }
     static void Unhook() {
-        if (hooks == null) {
+        if(hooks == null) {
             return;
         }
         foreach(var hook in hooks) {
@@ -239,11 +239,10 @@ public class ForOneAdvertisementSystem {
         string defaultKey = GameCulture.DefaultCulture.Name;
         string defaultDefaultKey = "en-US";
         string defaultDefaultDefaultKey = "zh-Hans";
-        var localizations = GetRandomContent(contents)?.Localizations;
-        if(localizations == null) {
-            return string.Empty;
-        }
-        if(Succeeded && localizations != null) {
+        string GetLocalization(Dictionary<string, string>? localizations) {
+            if(localizations == null) {
+                return string.Empty;
+            }
             if(localizations.ContainsKey(key)) {
                 return localizations[key];
             }
@@ -256,35 +255,47 @@ public class ForOneAdvertisementSystem {
             else if(localizations.ContainsKey(defaultDefaultDefaultKey)) {
                 return localizations[defaultDefaultDefaultKey];
             }
-            else if (localizations.Count > 0) {
+            else if(localizations.Count > 0) {
                 return localizations.Values.First();
             }
-        }
-        var savedLocalizations = GetRandomContent(savedContents)?.Localizations;
-        if(savedLocalizations != null) {
-            if(savedLocalizations.ContainsKey(key)) {
-                return savedLocalizations[key];
-            }
-            else if(savedLocalizations.ContainsKey(defaultKey)) {
-                return savedLocalizations[defaultKey];
-            }
-            else if(savedLocalizations.ContainsKey(defaultDefaultKey)) {
-                return savedLocalizations[defaultDefaultKey];
-            }
-            else if(savedLocalizations.ContainsKey(defaultDefaultDefaultKey)) {
-                return savedLocalizations[defaultDefaultDefaultKey];
-            }
-            else if (savedLocalizations.Count > 0) {
-                return savedLocalizations.Values.First();
+            else {
+                return string.Empty;
             }
         }
-        return string.Empty;
+        var content = GetRandomContent(contents);
+        var localizations = content?.Localizations;
+        string localization = GetLocalization(localizations);
+        if(localization == string.Empty) {
+            content = GetRandomContent(savedContents);
+            var savedLocalizations = content?.Localizations;
+            localization = GetLocalization(savedLocalizations);
+        }
+        if(localization == string.Empty) {
+            return string.Empty;
+        }
+
+        if(!content!.useTemplate) {
+            return localization;
+        }
+
+        string templateLocalization = string.Empty;
+        if(contents != null && contents.ContainsKey("Template")) {
+            templateLocalization = GetLocalization(contents["Template"].Localizations);
+        }
+        if(templateLocalization == string.Empty && savedContents != null && savedContents.ContainsKey("Template")) {
+            templateLocalization = GetLocalization(savedContents["Template"].Localizations);
+        }
+        if(templateLocalization != string.Empty) {
+            localization = templateLocalization.FormatWith(localization);
+        }
+        return localization;
     }
 
     class Content {
         public float Weight = 1f;
         public float WeightActive;
         public float WeightInactive;
+        public bool useTemplate = true;
         public Dictionary<string, string> Localizations = [];
     }
     /// <summary>
@@ -606,6 +617,9 @@ public class ForOneAdvertisementSystem {
                     if(str.StartsWith("weightInactive:") && float.TryParse(str["weightInactive:".Length..].Trim(), out var weightInactive)) {
                         content.WeightInactive = weightInactive;
                         continue;
+                    }
+                    if(str.StartsWith("useTemplate:") && bool.TryParse(str["useTemplate:".Length..].Trim(), out bool useTemplate)) {
+                        content.useTemplate = useTemplate;
                     }
                     #region 跳过任何type不是toggle的块
                     if(block["value"]?["type"]?.ToString() != "toggle") {
