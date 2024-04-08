@@ -262,19 +262,19 @@ public class ForOneAdvertisementSystem {
                 return string.Empty;
             }
         }
-        var content = GetRandomContent(contents);
+        var content = Succeeded ? GetRandomContent(contents) : null;
         var localizations = content?.Localizations;
         string localization = GetLocalization(localizations);
-        if(localization == string.Empty) {
+        if(localization == string.Empty && savedContents != null) {
             content = GetRandomContent(savedContents);
             var savedLocalizations = content?.Localizations;
             localization = GetLocalization(savedLocalizations);
         }
-        if(localization == string.Empty) {
+        if(content == null || localization == string.Empty) {
             return string.Empty;
         }
 
-        if(!content!.useTemplate) {
+        if(!content.useTemplate) {
             return localization;
         }
 
@@ -337,7 +337,7 @@ public class ForOneAdvertisementSystem {
         }
         loadTask = Task.Run(() => LoadAsync(notionPageId), (cancellationTokenSource ??= new()).Token);
         loadTask.ContinueWith(task => {
-            if(task.IsCompletedSuccessfully && contents != null) {
+            if(Succeeded && contents != null) {
                 SaveData(contents);
             }
         }, cancellationTokenSource.Token);
