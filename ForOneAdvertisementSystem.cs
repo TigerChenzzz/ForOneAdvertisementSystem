@@ -49,35 +49,68 @@ public class ForOneAdvertisementSystem {
     /// <summary>
     /// 此模块的版本
     /// </summary>
-    public static Version Version => new(1, 3);
+    public static Version Version => new(1, 3, 1);
 
+    /// <summary>
+    /// 是否被加载了
+    /// </summary>
+    public static bool Loaded { get; private set; }
+    private static void OnLoadedOnce()
+    {
+
+    }
+
+    private static bool? _showAdvertisementToSet;
     /// <summary>
     /// <br/>是否在玩家进入世界时显示推广
     /// <br/>默认真
-    /// <br/>需要在 Load 之后使用
+    /// <br/>在 Load 之后才可以获取
+    /// <br/>但在 Load 之前也可以设置
     /// </summary>
-    public static bool ShowAdvertisement {
-        get => !ExtraData.TryGetValue("ShowAdvertisement", out var showAdvertisementObj) ||
+    public static bool ShowAdvertisement
+    {
+        get => !Loaded ? (_showAdvertisementToSet ?? true) :
+            !ExtraData.TryGetValue("ShowAdvertisement", out var showAdvertisementObj) ||
             showAdvertisementObj is not bool showAdvertisement || showAdvertisement;
-        set => ExtraData["ShowAdvertisement"] = value;
+        set
+        {
+            if (!Loaded)
+            {
+                _showAdvertisementToSet = value;
+                return;
+            }
+            ExtraData["ShowAdvertisement"] = value;
+        }
     }
 
+    private static int? _maxShowTimeToSet;
     /// <summary>
     /// <br/>推广内容的最大显示时间
     /// <br/>单位为帧
     /// <br/>默认 1200, 即 20 秒
-    /// <br/>需要在 Load 之后使用
+    /// <br/>在 Load 之后才可以获取
+    /// <br/>但在 Load 之前也可以设置
     /// </summary>
-    public static int MaxShowTimeInFrames {
-        get => ExtraData.TryGetValue("MaxShowTime", out var maxShowTimeObj) &&
+    public static int MaxShowTimeInFrames
+    {
+        get => !Loaded ? (_maxShowTimeToSet ?? 1200) :
+            ExtraData.TryGetValue("MaxShowTime", out var maxShowTimeObj) &&
             maxShowTimeObj is int maxShowTime ? maxShowTime : 1200;
-        set => ExtraData["MaxShowTime"] = 1200;
+        set
+        {
+            if (!Loaded)
+            {
+                _maxShowTimeToSet = value;
+            }
+            ExtraData["MaxShowTime"] = 1200;
+        }
     }
     /// <summary>
     /// <br/>推广内容的最大显示时间
     /// <br/>单位为秒
     /// <br/>默认 20
-    /// <br/>需要在 Load 之后使用
+    /// <br/>在 Load 之后才可以获取
+    /// <br/>但在 Load 之前也可以设置
     /// </summary>
     public static float MaxShowTimeInSeconds {
         get => MaxShowTimeInFrames / 60f;
@@ -185,6 +218,8 @@ public class ForOneAdvertisementSystem {
             ExtraData["CancelLoad"] = new Action(CancelLoad);
             firstLoad = true;
         }
+        Loaded = true;
+        OnLoadedOnce();
 
         var mods = Mods;
 
