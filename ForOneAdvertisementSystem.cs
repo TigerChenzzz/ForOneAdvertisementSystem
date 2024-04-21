@@ -26,8 +26,8 @@ using Terraria.ModLoader.Config;
 using Terraria.UI;
 using Terraria.UI.Chat;
 using static ForOneAdvertisementSystem.MiscHelper;
-using ModPack = System.Collections.Generic.KeyValuePair<string, (Terraria.ModLoader.Mod Mod, System.Collections.Generic.Dictionary<string, object> ExtraValue)>;
-using ModsDict = System.Collections.Generic.Dictionary<string, (Terraria.ModLoader.Mod Mod, System.Collections.Generic.Dictionary<string, object> ExtraValue)>;
+using ModPack = System.Collections.Generic.KeyValuePair<string, (Terraria.ModLoader.Mod Mod, System.Collections.Generic.Dictionary<string, object?> ExtraValue)>;
+using ModsDict = System.Collections.Generic.Dictionary<string, (Terraria.ModLoader.Mod Mod, System.Collections.Generic.Dictionary<string, object?> ExtraValue)>;
 
 namespace ForOneAdvertisementSystem;
 
@@ -45,64 +45,77 @@ public class ForOneAdvertisementSystem : Mod {
 /// For One 制作组的推广组件
 /// </summary>
 public class ForOneAdvertisementSystem {
-    #region Load 以及查重
-    static bool FirstLoad;
-    static object? theAttribute;
-    static ModsDict? Mods {
-        get {
-            if(theAttribute == null) {
-                return null;
-            }
-            return (ModsDict?)theAttribute.GetType().GetField("Mods")?.GetValue(theAttribute);
-        }
-        set {
-            if(theAttribute == null) {
-                return;
-            }
-            var modsField = theAttribute.GetType().GetField("Mods");
-            if(modsField == null) {
-                return;
-            }
-            modsField.SetValue(theAttribute, value);
-        }
+    #region 一些属性
+    /// <summary>
+    /// 此模块的版本
+    /// </summary>
+    public static Version Version => new(1, 3);
+
+    /// <summary>
+    /// <br/>是否在玩家进入世界时显示推广
+    /// <br/>默认真
+    /// <br/>需要在 Load 之后使用
+    /// </summary>
+    public static bool ShowAdvertisement {
+        get => !ExtraData.TryGetValue("ShowAdvertisement", out var showAdvertisementObj) ||
+            showAdvertisementObj is not bool showAdvertisement || showAdvertisement;
+        set => ExtraData["ShowAdvertisement"] = value;
     }
+
+    /// <summary>
+    /// <br/>推广内容的最大显示时间
+    /// <br/>单位为帧
+    /// <br/>默认 1200, 即 20 秒
+    /// <br/>需要在 Load 之后使用
+    /// </summary>
+    public static int MaxShowTimeInFrames {
+        get => ExtraData.TryGetValue("MaxShowTime", out var maxShowTimeObj) &&
+            maxShowTimeObj is int maxShowTime ? maxShowTime : 1200;
+        set => ExtraData["MaxShowTime"] = 1200;
+    }
+    /// <summary>
+    /// <br/>推广内容的最大显示时间
+    /// <br/>单位为秒
+    /// <br/>默认 20
+    /// <br/>需要在 Load 之后使用
+    /// </summary>
+    public static float MaxShowTimeInSeconds {
+        get => MaxShowTimeInFrames / 60f;
+        set => MaxShowTimeInFrames = (int)(value * 60);
+    }
+    #endregion
+
+    #region Load 以及查重
+    static ModsDict Mods { get; set; } = null!;
+    static Dictionary<string, object?> ExtraData { get; set; } = null!;
     internal static class ExtraDataKeys {
         public const string DisplayName = "DisplayName";
         public const string LocalizedDisplayName = "LocalizedDisplayName";
         public const string DisplayNameGetter = "DisplayNameGetter";
     }
     static string GetName(ModPack modPack) {
-        if(modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.DisplayNameGetter) && modPack.Value.ExtraValue[ExtraDataKeys.DisplayNameGetter] is Delegate dele && dele.TryCastDelegate<Func<string>>(out var getter) && getter != null) {
+        if (modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.DisplayNameGetter) && modPack.Value.ExtraValue[ExtraDataKeys.DisplayNameGetter] is Delegate dele && dele.TryCastDelegate<Func<string>>(out var getter) && getter != null) {
             return getter();
         }
-        if(modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.LocalizedDisplayName) && modPack.Value.ExtraValue[ExtraDataKeys.LocalizedDisplayName] is LocalizedText localizedText) {
+        if (modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.LocalizedDisplayName) && modPack.Value.ExtraValue[ExtraDataKeys.LocalizedDisplayName] is LocalizedText localizedText) {
             return localizedText.Value;
         }
-        if(modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.DisplayName) && modPack.Value.ExtraValue[ExtraDataKeys.DisplayName] is string displayName) {
+        if (modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.DisplayName) && modPack.Value.ExtraValue[ExtraDataKeys.DisplayName] is string displayName) {
             return displayName;
         }
         return modPack.Value.Mod.DisplayName;
     }
     static string GetModsName() {
-        if(ModsCached == null || ModsCached.Count == 0) {
+        if (Mods == null || Mods.Count == 0) {
             return string.Empty;
         }
-        if(ModsCached.Count <= 3) {
-            return string.Join(", ", ModsCached.Select(GetName));
+        if (Mods.Count <= 3) {
+            return string.Join(", ", Mods.Select(GetName));
         }
-        return string.Join(", ", ModsCached.RandomTake(3).Select(GetName)) + "...";
+        return string.Join(", ", Mods.RandomTake(3).Select(GetName)) + "...";
     }
-    static bool _modsCachedGot;
-    static ModsDict? _modsCached;
-    internal static ModsDict? ModsCached {
-        get {
-            if(!_modsCachedGot) {
-                _modsCachedGot = true;
-                _modsCached = Mods;
-            }
-            return _modsCached;
-        }
-    }
+    #region Load
+
     /// <summary>
     ///  加载上这个推广系统
     /// </summary>
@@ -123,7 +136,7 @@ public class ForOneAdvertisementSystem {
     /// </summary>
     /// <param name="mod">推广源</param>
     /// <param name="localizedDisplayName">推广源的显示名字, 本地化版本</param>
-    public static void Load(Mod mod, LocalizedText? localizedDisplayName) {
+    public static void Load(Mod mod, LocalizedText localizedDisplayName) {
         LoadInner(mod, localizedDisplayName: localizedDisplayName);
     }
     /// <summary>
@@ -136,48 +149,85 @@ public class ForOneAdvertisementSystem {
     }
 
     static void LoadInner(Mod mod, string? displayName = null, LocalizedText? localizedDisplayName = null, Func<string>? displayNameGetter = null) {
+        bool firstLoad = false;
+
+        // 获取 Main 下的所有特性
         AttributeCollection attributes = TypeDescriptor.GetAttributes(typeof(Main));
-        foreach(var attr in attributes) {
-            if(attr.GetType().Name == nameof(ForOneAdvertisementModsAttribute)) {
-                theAttribute = attr;
+
+
+        // 尝试找到一个名为 ForOneAdvertisementModsAttribute 且有 Mods 字段的特性
+        foreach (var i in attributes.Count) {
+            var attr = attributes[i];
+            var attrType = attr.GetType();
+            if (attrType.Name == nameof(ForOneAdvertisementModsAttribute) &&
+                attrType.GetField("Mods")?.GetValue(attr) is ModsDict theMods) {
+                var theExtraData = attrType.GetField("ExtraData")?.GetValue(attr) as Dictionary<string, object?>;
+                Mods = theMods;
+                ExtraData = theExtraData ?? [];
                 break;
             }
         }
-        if(theAttribute == null) {
-            FirstLoad = true;
-            theAttribute = new ForOneAdvertisementModsAttribute();
-            TypeDescriptor.AddAttributes(typeof(Main), (ForOneAdvertisementModsAttribute)theAttribute);
+
+        // 若没找到, 则标记为第一次加载, 且加上此特性
+        if (Mods == null) {
+            firstLoad = true;
+            var addingAttribute = new ForOneAdvertisementModsAttribute();
+            Mods = addingAttribute.Mods;
+            ExtraData = addingAttribute.ExtraData;
+            TypeDescriptor.AddAttributes(typeof(Main), addingAttribute);
         }
+
+        // 否则若标记了版本且较旧, 则取消较旧版本的加载, 并标记为第一次加载
+        else if (ExtraData.TryGetValue("Version", out var versionObj) && versionObj is Version version && version < Version &&
+            ExtraData.TryGetValue("CancelLoad", out var cancelLoadObj) && cancelLoadObj is Action cancelLoad) {
+            cancelLoad();
+            ExtraData["Version"] = Version;
+            ExtraData["CancelLoad"] = new Action(CancelLoad);
+            firstLoad = true;
+        }
+
         var mods = Mods;
-        if(mods == null) {
-            // 产生冲突, 直接退出
-            return;
+
+        // 介于卸载时无法删除特性, 所以特性会保留在 Main 上, 而只是清空 Mods
+        // 所以 Mods 中无数据时也视作第一次加载
+        if (mods.Count == 0) {
+            firstLoad = true;
         }
-        if(mods.Count == 0) {
-            FirstLoad = true;
-        }
+
         // 若已有此mod, 直接退出
-        if(mods.ContainsKey(mod.Name)) {
+        if (mods.ContainsKey(mod.Name)) {
             return;
         }
-        Dictionary<string, object> extraData = [];
-        if(displayName != null && displayName != string.Empty) {
-            extraData.Add(ExtraDataKeys.DisplayName, displayName);
+
+        // 生成 mod 的 extraData, 并与 mod 一起加入 Mods 中
+        Dictionary<string, object?> modExtraData = [];
+        if (displayName != null && displayName != string.Empty) {
+            modExtraData.Add(ExtraDataKeys.DisplayName, displayName);
         }
-        if(localizedDisplayName != null) {
-            extraData.Add(ExtraDataKeys.LocalizedDisplayName, localizedDisplayName);
+        if (localizedDisplayName != null) {
+            modExtraData.Add(ExtraDataKeys.LocalizedDisplayName, localizedDisplayName);
         }
-        if(displayNameGetter != null) {
-            extraData.Add(ExtraDataKeys.DisplayNameGetter, displayNameGetter);
+        if (displayNameGetter != null) {
+            modExtraData.Add(ExtraDataKeys.DisplayNameGetter, displayNameGetter);
         }
-        mods.Add(mod.Name, (mod, extraData));
-        if(!FirstLoad) {
+        mods.Add(mod.Name, (mod, modExtraData));
+
+        // 若不是第一次加载, 则结束, 不进行接下来的步骤
+        if (!firstLoad) {
             return;
         }
-        // 以下内容只执行一次
+
         Hook();
         savedContents = LoadData();
         LoadStart();
+    }
+    #endregion
+
+    static void CancelLoad() {
+        cancellationTokenSource?.Cancel();
+        loadTask?.Dispose();
+        loadTask = null;
+        Unhook();
     }
     #endregion
 
@@ -189,10 +239,10 @@ public class ForOneAdvertisementSystem {
         hooks.Add(new(typeof(PlayerLoader).GetMethod(nameof(PlayerLoader.OnEnterWorld), BindingFlags.Static | BindingFlags.Public)!, On_PlayerLoaderOnEnterWorld));
     }
     static void Unhook() {
-        if(hooks == null) {
+        if (hooks == null) {
             return;
         }
-        foreach(var hook in hooks) {
+        foreach (var hook in hooks) {
             hook.Undo();
             hook.Dispose();
         }
@@ -204,7 +254,9 @@ public class ForOneAdvertisementSystem {
     }
     static void On_PlayerLoaderOnEnterWorld(Action<int> orig, int playerIndex) {
         orig(playerIndex);
-        InGameNotificationsTracker.AddNotification(new AdvertisementNotification());
+        if (ShowAdvertisement) {
+            InGameNotificationsTracker.AddNotification(new AdvertisementNotification());
+        }
     }
     #endregion
 
@@ -222,17 +274,17 @@ public class ForOneAdvertisementSystem {
     /// 使用前需先检查<see cref="Finished"/>为真才可以使用
     /// </summary>
     public static string GetLocalizedAdvertisement() {
-        if(ModsCached == null || ModsCached.Count == 0) {
+        if (Mods == null || Mods.Count == 0) {
             return string.Empty;
         }
         string result = GetLocalizedAdvertisementInner();
-        if(result == string.Empty) {
+        if (result == string.Empty) {
             return result;
         }
         return result.FormatWith(GetModsName());
     }
     static string GetLocalizedAdvertisementInner() {
-        if(!Finished) {
+        if (!Finished) {
             throw new("使用 GetLocalizedAdvertisement 前需先检查 Finished !");
         }
         string key = Language.ActiveCulture.Name;
@@ -240,22 +292,22 @@ public class ForOneAdvertisementSystem {
         string defaultDefaultKey = "en-US";
         string defaultDefaultDefaultKey = "zh-Hans";
         string GetLocalization(Dictionary<string, string>? localizations) {
-            if(localizations == null) {
+            if (localizations == null) {
                 return string.Empty;
             }
-            if(localizations.ContainsKey(key)) {
+            if (localizations.ContainsKey(key)) {
                 return localizations[key];
             }
-            else if(localizations.ContainsKey(defaultKey)) {
+            else if (localizations.ContainsKey(defaultKey)) {
                 return localizations[defaultKey];
             }
-            else if(localizations.ContainsKey(defaultDefaultKey)) {
+            else if (localizations.ContainsKey(defaultDefaultKey)) {
                 return localizations[defaultDefaultKey];
             }
-            else if(localizations.ContainsKey(defaultDefaultDefaultKey)) {
+            else if (localizations.ContainsKey(defaultDefaultDefaultKey)) {
                 return localizations[defaultDefaultDefaultKey];
             }
-            else if(localizations.Count > 0) {
+            else if (localizations.Count > 0) {
                 return localizations.Values.First();
             }
             else {
@@ -265,27 +317,27 @@ public class ForOneAdvertisementSystem {
         var content = Succeeded ? GetRandomContent(contents) : null;
         var localizations = content?.Localizations;
         string localization = GetLocalization(localizations);
-        if(localization == string.Empty && savedContents != null) {
+        if (localization == string.Empty && savedContents != null) {
             content = GetRandomContent(savedContents);
             var savedLocalizations = content?.Localizations;
             localization = GetLocalization(savedLocalizations);
         }
-        if(content == null || localization == string.Empty) {
+        if (content == null || localization == string.Empty) {
             return string.Empty;
         }
 
-        if(!content.useTemplate) {
+        if (!content.useTemplate) {
             return localization;
         }
 
         string templateLocalization = string.Empty;
-        if(contents != null && contents.ContainsKey("Template")) {
+        if (contents != null && contents.ContainsKey("Template")) {
             templateLocalization = GetLocalization(contents["Template"].Localizations);
         }
-        if(templateLocalization == string.Empty && savedContents != null && savedContents.ContainsKey("Template")) {
+        if (templateLocalization == string.Empty && savedContents != null && savedContents.ContainsKey("Template")) {
             templateLocalization = GetLocalization(savedContents["Template"].Localizations);
         }
-        if(templateLocalization != string.Empty) {
+        if (templateLocalization != string.Empty) {
             localization = templateLocalization.FormatWith(localization);
         }
         return localization;
@@ -306,17 +358,17 @@ public class ForOneAdvertisementSystem {
     static Content? GetRandomContent(Dictionary<string, Content>? theContents) {
         object[] localMods = (object[])typeof(Main).Assembly.GetType("Terraria.ModLoader.Core.ModOrganizer")!.GetMethod("FindMods", BindingFlags.Static | BindingFlags.Public |BindingFlags.NonPublic)!.Invoke(null, [false])!;
         HashSet<string>? localModsName = null;
-        if(localMods?.Length > 0) {
+        if (localMods?.Length > 0) {
             var getLocalModName = localMods[0].GetType().GetProperty("Name")!.GetGetMethod()!;
             localModsName = [.. localMods.Select(m => (string)getLocalModName.Invoke(m, null)!)];
         }
         return theContents?.RandomTake(p => {
             string modName = p.Key;
             var content = p.Value;
-            if(ModLoader.TryGetMod(modName, out _)) {
+            if (ModLoader.TryGetMod(modName, out _)) {
                 return content.WeightActive;
             }
-            if(localModsName?.Contains(modName) == true) {
+            if (localModsName?.Contains(modName) == true) {
                 return content.WeightInactive;
             }
             return content.Weight;
@@ -332,12 +384,12 @@ public class ForOneAdvertisementSystem {
     /// 如果<see cref="loadTask"/>为空则开始任务
     /// </summary>
     internal static void LoadStart() {
-        if(loadTask != null) {
+        if (loadTask != null) {
             return;
         }
         loadTask = Task.Run(() => LoadAsync(notionPageId), (cancellationTokenSource ??= new()).Token);
         loadTask.ContinueWith(task => {
-            if(Succeeded && contents != null) {
+            if (Succeeded && contents != null) {
                 SaveData(contents);
             }
         }, cancellationTokenSource.Token);
@@ -346,7 +398,9 @@ public class ForOneAdvertisementSystem {
         cancellationTokenSource?.Cancel();
         loadTask?.Dispose();
         loadTask = null;
+        Unhook();
         Mods?.Clear();
+        ExtraData?.Clear();
     }
     #region 数据存储
     /// <summary>
@@ -373,7 +427,7 @@ public class ForOneAdvertisementSystem {
     /// </summary>
     static Dictionary<string, Content>? LoadData() {
         string path = DataPath;
-        if(!File.Exists(path)) {
+        if (!File.Exists(path)) {
             return null;
         }
         try {
@@ -381,7 +435,7 @@ public class ForOneAdvertisementSystem {
             JsonConvert.PopulateObject(File.ReadAllText(path), data, ConfigManager.serializerSettings);
             return data;
         }
-        catch(Exception e) when(e is JsonReaderException or JsonSerializationException) {
+        catch (Exception e) when (e is JsonReaderException or JsonSerializationException) {
             // ModInstance.Logger.Warn("AdvertisementSystem: advertisement file failed to load");
             File.Delete(path);
         }
@@ -424,7 +478,7 @@ public class ForOneAdvertisementSystem {
         UnexpectedError,
     }
     private static async Task<LoadResult> LoadAsync(string notionId, int mainLimit = 30, int subLimit = 25, int lowLimit = 25) {
-        if(mainLimit <= 0 || subLimit <= 0 || notionId == null || notionId.Length == 0) {
+        if (mainLimit <= 0 || subLimit <= 0 || notionId == null || notionId.Length == 0) {
             return LoadResult.WrongParameters;
         }
 
@@ -432,7 +486,7 @@ public class ForOneAdvertisementSystem {
         //HttpClient? httpClient = null;
         try {
             PingReply pingReply = new Ping().Send(pingHostName);
-            if(pingReply.Status != IPStatus.Success) {
+            if (pingReply.Status != IPStatus.Success) {
                 return LoadResult.NotSuccessStatusCode;
             }
         }
@@ -463,25 +517,25 @@ public class ForOneAdvertisementSystem {
             #endregion
             #region 发送Post请求, 获得响应的主体
             using HttpResponseMessage mainResponse = await httpClient.PostAsync(mainUri, mainRequest);
-            if(!mainResponse.IsSuccessStatusCode) {
+            if (!mainResponse.IsSuccessStatusCode) {
                 return LoadResult.NotSuccessStatusCode;
             }
             string mainResponseBody = await mainResponse.Content.ReadAsStringAsync();
             #endregion
             #region 解码json
-            if(JsonConvert.DeserializeObject(mainResponseBody) is not JObject mainJson) {
+            if (JsonConvert.DeserializeObject(mainResponseBody) is not JObject mainJson) {
                 return LoadResult.ErrorInDeserialize;
             }
             #endregion
             #region 解析响应数据
             JToken? mainBlocks = mainJson["recordMap"]?["block"];
-            if(mainBlocks == null) {
+            if (mainBlocks == null) {
                 return LoadResult.WrongFormat;
             }
             Dictionary<string, string[]> modContents = [];
             List<string> requests = [];
-            foreach(JToken block in mainBlocks) {
-                if(block is not JProperty blockProperty) {
+            foreach (JToken block in mainBlocks) {
+                if (block is not JProperty blockProperty) {
                     continue;
                 }
                 #region 定义局部变量
@@ -490,18 +544,18 @@ public class ForOneAdvertisementSystem {
                 #endregion
                 JToken? value = blockProperty.Value["value"];
                 #region 跳过任何type不是toggle的块
-                if(value?["type"]?.ToString() != "toggle") {
+                if (value?["type"]?.ToString() != "toggle") {
                     continue;
                 }
                 #endregion
                 #region 获取此toggle块的文本值, 作为模组名
                 var modToken = value["properties"]?["title"]?[0]?[0];
-                if(modToken is not JValue modNameValue) {
+                if (modToken is not JValue modNameValue) {
                     continue;//不直接返回, 有可能这个块确实不长这样
                 }
                 modName = modNameValue.ToString();
                 #region 如果出现重复值的键值, 直接跳过, 忽略它
-                if(modContents.ContainsKey(modName)) {
+                if (modContents.ContainsKey(modName)) {
                     continue;
                 }
                 #endregion
@@ -516,15 +570,15 @@ public class ForOneAdvertisementSystem {
                     }
                     return v.ToString();
                 }).ToArray();
-                if(blockContents == null || errorInContentFormat) {
+                if (blockContents == null || errorInContentFormat) {
                     continue;
                 }
-                if(value["space_id"] is not JValue spaceIdValue) {
+                if (value["space_id"] is not JValue spaceIdValue) {
                     return LoadResult.WrongFormat;
                 }
                 spaceId = spaceIdValue.ToString();
                 //没有内容代表有这个toggle块但toggle块下没东西, 可认为还没有它的内容, 直接跳过
-                if(blockContents.Length == 0) {
+                if (blockContents.Length == 0) {
                     continue;
                 }
                 modContents[modName] = blockContents;
@@ -561,32 +615,32 @@ public class ForOneAdvertisementSystem {
             #endregion
             #region 发送Post请求, 获得响应的主体
             using HttpResponseMessage subResponse = await httpClient.PostAsync(subUri, subRequest);
-            if(!subResponse.IsSuccessStatusCode) {
+            if (!subResponse.IsSuccessStatusCode) {
                 return LoadResult.NotSuccessStatusCode;
             }
             string subResponseBody = await subResponse.Content.ReadAsStringAsync();
             #endregion
             #region 解码json
-            if(JsonConvert.DeserializeObject(subResponseBody) is not JObject subJson) {
+            if (JsonConvert.DeserializeObject(subResponseBody) is not JObject subJson) {
                 return LoadResult.ErrorInDeserialize;
             }
             #endregion
             #region 解析响应数据
             requests.Clear();
             JToken? subBlocks = subJson["recordMap"]?["block"];
-            if(subBlocks == null) {
+            if (subBlocks == null) {
                 return LoadResult.WrongFormat;
             }
             Dictionary<string, Dictionary<string, string[]>> modLocalizationContents = [];
-            foreach(string modName in modContents.Keys) {
+            foreach (string modName in modContents.Keys) {
                 modLocalizationContents.Add(modName, []);
                 Content content = new();
                 string[] modBlockContents = modContents[modName];
                 //此时 blockContents 中装的是 某些特殊内容和本地化块 对应的 blockId
-                foreach(int i in modBlockContents.Length) {
+                foreach (int i in modBlockContents.Length) {
                     string blockId = modBlockContents[i];
                     JToken? block = subBlocks[blockId];
-                    if(block == null) {
+                    if (block == null) {
                         return LoadResult.ErrorContentId;
                     }
                     /*
@@ -602,31 +656,31 @@ public class ForOneAdvertisementSystem {
                     }).Where(s => s != null));
                     */
                     var contentToken = block["value"]?["properties"]?["title"]?[0]?[0];
-                    if(contentToken is not JValue contentValue) {
+                    if (contentToken is not JValue contentValue) {
                         continue;
                     }
                     string str = contentValue.ToString();
-                    if(str.StartsWith("weight:") && float.TryParse(str["weight:".Length..].Trim(), out var weight)) {
+                    if (str.StartsWith("weight:") && float.TryParse(str["weight:".Length..].Trim(), out var weight)) {
                         content.Weight = weight;
                         continue;
                     }
-                    if(str.StartsWith("weightActive:") && float.TryParse(str["weightActive:".Length..].Trim(), out var weightActive)) {
+                    if (str.StartsWith("weightActive:") && float.TryParse(str["weightActive:".Length..].Trim(), out var weightActive)) {
                         content.WeightActive = weightActive;
                         continue;
                     }
-                    if(str.StartsWith("weightInactive:") && float.TryParse(str["weightInactive:".Length..].Trim(), out var weightInactive)) {
+                    if (str.StartsWith("weightInactive:") && float.TryParse(str["weightInactive:".Length..].Trim(), out var weightInactive)) {
                         content.WeightInactive = weightInactive;
                         continue;
                     }
-                    if(str.StartsWith("useTemplate:") && bool.TryParse(str["useTemplate:".Length..].Trim(), out bool useTemplate)) {
+                    if (str.StartsWith("useTemplate:") && bool.TryParse(str["useTemplate:".Length..].Trim(), out bool useTemplate)) {
                         content.useTemplate = useTemplate;
                     }
                     #region 跳过任何type不是toggle的块
-                    if(block["value"]?["type"]?.ToString() != "toggle") {
+                    if (block["value"]?["type"]?.ToString() != "toggle") {
                         continue;
                     }
                     #endregion
-                    if(modLocalizationContents[modName].ContainsKey(str)) {
+                    if (modLocalizationContents[modName].ContainsKey(str)) {
                         continue;
                     }
                     bool errorInContentFormat = false;
@@ -637,14 +691,14 @@ public class ForOneAdvertisementSystem {
                         }
                         return v.ToString();
                     }).ToArray();
-                    if(blockContents == null || errorInContentFormat) {
+                    if (blockContents == null || errorInContentFormat) {
                         continue;
                     }
-                    if(block["value"]?["space_id"] is not JValue spaceIdValue) {
+                    if (block["value"]?["space_id"] is not JValue spaceIdValue) {
                         return LoadResult.WrongFormat;
                     }
                     //没有内容代表有这个toggle块但toggle块下没东西, 可认为还没有它的内容, 直接跳过
-                    if(blockContents.Length == 0) {
+                    if (blockContents.Length == 0) {
                         continue;
                     }
                     modLocalizationContents[modName].Add(str, blockContents);
@@ -683,33 +737,33 @@ public class ForOneAdvertisementSystem {
             #endregion
             #region 发送Post请求, 获得响应的主体
             using HttpResponseMessage lowResponse = await httpClient.PostAsync(subUri, lowRequest);
-            if(!lowResponse.IsSuccessStatusCode) {
+            if (!lowResponse.IsSuccessStatusCode) {
                 return LoadResult.NotSuccessStatusCode;
             }
             string lowResponseBody = await lowResponse.Content.ReadAsStringAsync();
             #endregion
             #region 解码json
-            if(JsonConvert.DeserializeObject(lowResponseBody) is not JObject lowJson) {
+            if (JsonConvert.DeserializeObject(lowResponseBody) is not JObject lowJson) {
                 return LoadResult.ErrorInDeserialize;
             }
             #endregion
             #region 解析响应数据
             JToken? lowBlocks = lowJson["recordMap"]?["block"];
-            if(lowBlocks == null) {
+            if (lowBlocks == null) {
                 return LoadResult.WrongFormat;
             }
-            foreach(string modName in modLocalizationContents.Keys) {
-                foreach(string localization in modLocalizationContents[modName].Keys) {
+            foreach (string modName in modLocalizationContents.Keys) {
+                foreach (string localization in modLocalizationContents[modName].Keys) {
                     string[] localizationBlockContents = modLocalizationContents[modName][localization];
                     // 此时 localizationBlockContents 中装的是内容对应的 blockId, 现在将它们转换为对应的实际内容
-                    foreach(int blockIndex in localizationBlockContents.Length) {
+                    foreach (int blockIndex in localizationBlockContents.Length) {
                         string blockId = localizationBlockContents[blockIndex];
                         JToken? block = lowBlocks[blockId];
-                        if(block == null) {
+                        if (block == null) {
                             return LoadResult.ErrorContentId;
                         }
                         var contentToken = block["value"]?["properties"]?["title"];
-                        if(contentToken is not JArray contentArray) {
+                        if (contentToken is not JArray contentArray) {
                             return LoadResult.WrongFormat;//确定这是我们要找的块但是没有对应项, 则肯定是格式错误
                         }
                         localizationBlockContents[blockIndex] = string.Join(null, contentArray.Select(t =>
@@ -720,7 +774,7 @@ public class ForOneAdvertisementSystem {
                     contents[modName].Localizations.Add(localization, string.Join('\n', localizationBlockContents));
 
                 }
-                if(contents[modName].Localizations.Count == 0) {
+                if (contents[modName].Localizations.Count == 0) {
                     contents.Remove(modName);
                 }
             }
@@ -728,8 +782,8 @@ public class ForOneAdvertisementSystem {
             #endregion
             return LoadResult.Success;
         }
-        catch(Exception e) {
-            if(e is SocketException or HttpRequestException) {
+        catch (Exception e) {
+            if (e is SocketException or HttpRequestException) {
                 // ModInstance.Logger.Warn("Advertisement LoadAsync: Web request exception: " + e.Message);
                 return LoadResult.NotSuccessStatusCode;
             }
@@ -743,10 +797,9 @@ public class ForOneAdvertisementSystem {
 
 #region Notification
 internal class AdvertisementNotification : IInGameNotification {
-    public bool ShouldBeRemoved => timeLeft <= 0;
+    public bool ShouldBeRemoved => timeLeft <= 0 || !ForOneAdvertisementSystem.ShowAdvertisement;
 
-    public const int KeepTimeInSecond = 10 * 2;
-    public const int MaxTimeLeft = KeepTimeInSecond * 60;
+    public static int MaxTimeLeft => ForOneAdvertisementSystem.MaxShowTimeInFrames;
     /// <summary>
     /// 从最小变到最大或者从最大变到最小的时间
     /// </summary>
@@ -771,21 +824,21 @@ internal class AdvertisementNotification : IInGameNotification {
     Vector2 textSize;
     bool _textSet;
     private void SetText() {
-        if(_textSet) {
+        if (_textSet) {
             return;
         }
         _textSet = true;
         var value = ForOneAdvertisementSystem.GetLocalizedAdvertisement();
-        if(value == null || value == string.Empty) {
+        if (value == null || value == string.Empty) {
             return;
         }
-        if(_text == value)
+        if (_text == value)
             return;
         _text = value;
-        if(value == null) {
+        if (value == null) {
             snippets = null;
         }
-        else if(value == "") {
+        else if (value == "") {
             snippets = null;
             timeLeft = 0;
         }
@@ -807,11 +860,11 @@ internal class AdvertisementNotification : IInGameNotification {
     Task? SetTextTask;
 
     public void Update() {
-        if(startDelayNow > 0) {
+        if (startDelayNow > 0) {
             startDelayNow -= 1;
             return;
         }
-        if(!ForOneAdvertisementSystem.Finished && SetTextTask?.IsCompleted != true) {
+        if (!ForOneAdvertisementSystem.Finished && SetTextTask?.IsCompleted != true) {
             return;
         }
         timeLeft -= 1;
@@ -819,17 +872,17 @@ internal class AdvertisementNotification : IInGameNotification {
     }
 
     public void DrawInGame(SpriteBatch spriteBatch, Vector2 bottomAnchorPosition) {
-        if(!ForOneAdvertisementSystem.Finished || ShouldBeRemoved) {
+        if (!ForOneAdvertisementSystem.Finished || ShouldBeRemoved) {
             return;
         }
         float opacity = Opacity;
         float maxWidth = Main.screenWidth * 0.7f;
-        if(opacity <= 0f) {
+        if (opacity <= 0f) {
             return;
         }
         Vector2 scale = new(Scale); //缩放
         SetTextTask ??= Task.Run(SetText);
-        if(snippets == null) {
+        if (snippets == null) {
             return;
         }
         textSize = ChatManager.GetStringSize(font, snippets, scale, maxWidth);
@@ -843,8 +896,8 @@ internal class AdvertisementNotification : IInGameNotification {
         Color color = Color.LightCyan;
         color.A = Main.mouseTextColor;
         color *= opacity;
-        if(snippets!.Length > 0 && snippets[0].Color != color) {
-            foreach(var snippet in snippets) {
+        if (snippets!.Length > 0 && snippets[0].Color != color) {
+            foreach (var snippet in snippets) {
                 snippet.Color = color;
             }
         }
@@ -859,13 +912,13 @@ internal class AdvertisementNotification : IInGameNotification {
     }
 
     private void OnMouseOver(ref bool hovering) {
-        if(!hovering) {
+        if (!hovering) {
             return;
         }
         // This method is called when the user hovers over the notification.
 
         // Skip if we're ignoring mouse input.
-        if(PlayerInput.IgnoreMouseInterface || Main.LocalPlayer.mouseInterface) {
+        if (PlayerInput.IgnoreMouseInterface || Main.LocalPlayer.mouseInterface) {
             hovering = false;
             return;
         }
@@ -873,7 +926,7 @@ internal class AdvertisementNotification : IInGameNotification {
         // We are now interacting with a UI.
         Main.LocalPlayer.mouseInterface = true;
 
-        if(!Main.mouseLeft || !Main.mouseLeftRelease) {
+        if (!Main.mouseLeft || !Main.mouseLeftRelease) {
             return;
         }
 
@@ -897,18 +950,19 @@ internal class AdvertisementNotification : IInGameNotification {
 [AttributeUsage(AttributeTargets.Class)]
 internal class ForOneAdvertisementModsAttribute : Attribute {
     public ModsDict Mods = [];
+    public Dictionary<string, object?> ExtraData = [];
 }
 
 internal static class MiscHelper {
     public static IEnumerator<int> GetEnumerator(this int self) {
-        for(int i = 0; i < self; ++i) {
+        for (int i = 0; i < self; ++i) {
             yield return i;
         }
     }
     public static IEnumerable<T> RandomTake<T>(this IEnumerable<T> self, int count) {
         T[] array = [..self];
         int length = array.Length;
-        foreach(var i in Math.Min(length, count)) {
+        foreach (var i in Math.Min(length, count)) {
             int rand = i + Main.rand.Next(length - i);
             yield return array[rand];
             array[rand] = array[i];
@@ -924,9 +978,9 @@ internal static class MiscHelper {
         float[] weights = [..self.Select(getWeight)];
         float total = weights.Sum();
         float rand = Main.rand.NextFloat(total);
-        foreach(int i in array.Length) {
+        foreach (int i in array.Length) {
             rand -= weights[i];
-            if(rand < 0) {
+            if (rand < 0) {
                 return array[i];
             }
         }
@@ -957,36 +1011,36 @@ internal static class MiscHelper {
     }
     public static float NewLerpValue(float val, bool clamped, LerpType type, params float[] pars) {
         #region 边界检查
-        if(clamped) {
-            if(val <= 0) {
+        if (clamped) {
+            if (val <= 0) {
                 return 0;
             }
-            if(val >= 1) {
+            if (val >= 1) {
                 return 1;
             }
         }
-        if(val == 0) {
+        if (val == 0) {
             return 0;
         }
-        if(val == 1) {
+        if (val == 1) {
             return 1;
         }
         #endregion
-        switch(type) {
+        switch (type) {
         case LerpType.Linear:
             return val;
         case LerpType.Quadratic:
             //pars[0]:二次函数的极点
-            if(pars.Length <= 0) {
+            if (pars.Length <= 0) {
                 throw new TargetParameterCountException("pars not enough");
             }
-            if(pars[0] == 0.5f) {
+            if (pars[0] == 0.5f) {
                 return 0;
             }
             return val * (val - 2 * pars[0]) / (1 - 2 * pars[0]);
         case LerpType.Cubic:
             //pars[0], pars[1]:三次函数的两个极点
-            if(pars.Length <= 1) {
+            if (pars.Length <= 1) {
                 throw new TargetParameterCountException("pars not enough");
             }
             return ((val - 3 * (pars[0] + pars[1]) / 2) * val + 3 * pars[0] * pars[1]) * val /
@@ -994,11 +1048,11 @@ internal static class MiscHelper {
         case LerpType.CubicByK:
             //pars[0], pars[1]:两处的斜率
             //par[2], par[3](若存在):宽度和高度
-            if(pars.Length < 2) {
+            if (pars.Length < 2) {
                 throw new TargetParameterCountException("pars not enough");
             }
             float par2 = pars.Length < 3 ? 1 : pars[2], par3 = pars.Length < 4 ? 1 : pars[3];
-            if(par2 == 0) {
+            if (par2 == 0) {
                 return 0;
             }
             Vector4 va = new(0, par2 * par2 * par2, 0, 3 * par2 * par2);
@@ -1011,21 +1065,21 @@ internal static class MiscHelper {
             var db = NewMatrix(va, v0, vc, vd);
             var dc = NewMatrix(va, vb, v0, vd);
             var dd = NewMatrix(va, vb, vc, v0);
-            if(d0.GetDeterminant() == 0) {
+            if (d0.GetDeterminant() == 0) {
                 return 0;
             }
-            if(par3 == 0) {
+            if (par3 == 0) {
                 return (((da.GetDeterminant() * val + db.GetDeterminant()) * val + dc.GetDeterminant()) * val + dd.GetDeterminant()) / d0.GetDeterminant();
             }
             return (((da.GetDeterminant() * val + db.GetDeterminant()) * val + dc.GetDeterminant()) * val + dd.GetDeterminant()) / d0.GetDeterminant() / par3;
         case LerpType.Sin:
             //pars[0], pars[1] : 两相位的四分之一周期数
-            if(pars.Length < 2) {
+            if (pars.Length < 2) {
                 throw new TargetParameterCountException("pars not enough");
             }
             float x1 = (float)(Math.PI / 2 * pars[0]), x2 = (float)(Math.PI / 2 * pars[1]), x = Lerp(x1, x2, val);
             float y1 = (float)Math.Sin(x1), y2 = (float)Math.Sin(x2), y = (float)Math.Sin(x);
-            if((pars[0] - pars[1]) % 4 == 0 || (pars[0] + pars[1]) % 4 == 2) {
+            if ((pars[0] - pars[1]) % 4 == 0 || (pars[0] + pars[1]) % 4 == 2) {
                 return y - y1;
             }
             return (y - y1) / (y2 - y1);
@@ -1040,36 +1094,36 @@ internal static class MiscHelper {
     public static double NewLerpValue(double val, bool clamped, LerpType type, params double[] pars) {
 
         #region 边界检查
-        if(clamped) {
-            if(val <= 0) {
+        if (clamped) {
+            if (val <= 0) {
                 return 0;
             }
-            if(val >= 1) {
+            if (val >= 1) {
                 return 1;
             }
         }
-        if(val == 0) {
+        if (val == 0) {
             return 0;
         }
-        if(val == 1) {
+        if (val == 1) {
             return 1;
         }
         #endregion
-        switch(type) {
+        switch (type) {
         case LerpType.Linear:
             return val;
         case LerpType.Quadratic:
             //pars[0]:二次函数的极点
-            if(pars.Length <= 0) {
+            if (pars.Length <= 0) {
                 throw new TargetParameterCountException("pars not enough");
             }
-            if(pars[0] == 0.5f) {
+            if (pars[0] == 0.5f) {
                 return 0;
             }
             return val * (val - 2 * pars[0]) / (1 - 2 * pars[0]);
         case LerpType.Cubic:
             //pars[0], pars[1]:三次函数的两个极点
-            if(pars.Length <= 1) {
+            if (pars.Length <= 1) {
                 throw new TargetParameterCountException("pars not enough");
             }
             return ((val - 3 * (pars[0] + pars[1]) / 2) * val + 3 * pars[0] * pars[1]) * val /
@@ -1077,11 +1131,11 @@ internal static class MiscHelper {
         case LerpType.CubicByK:
             //pars[0], pars[1]:两处的斜率
             //par[2], par[3](若存在):宽度和高度
-            if(pars.Length < 2) {
+            if (pars.Length < 2) {
                 throw new TargetParameterCountException("pars not enough");
             }
             double par2 = pars.Length < 3 ? 1 : pars[2], par3 = pars.Length < 4 ? 1 : pars[3];
-            if(par2 == 0) {
+            if (par2 == 0) {
                 return 0;
             }
             Vector4 va = NewVector4(0, par2 * par2 * par2, 0, 3 * par2 * par2);
@@ -1094,21 +1148,21 @@ internal static class MiscHelper {
             var db = NewMatrix(va, v0, vc, vd);
             var dc = NewMatrix(va, vb, v0, vd);
             var dd = NewMatrix(va, vb, vc, v0);
-            if(d0.GetDeterminant() == 0) {
+            if (d0.GetDeterminant() == 0) {
                 return 0;
             }
-            if(par3 == 0) {
+            if (par3 == 0) {
                 return (((da.GetDeterminant() * val + db.GetDeterminant()) * val + dc.GetDeterminant()) * val + dd.GetDeterminant()) / d0.GetDeterminant();
             }
             return (((da.GetDeterminant() * val + db.GetDeterminant()) * val + dc.GetDeterminant()) * val + dd.GetDeterminant()) / d0.GetDeterminant() / par3;
         case LerpType.Sin:
             //pars[0], pars[1] : 两相位的四分之一周期数
-            if(pars.Length < 2) {
+            if (pars.Length < 2) {
                 throw new TargetParameterCountException("pars not enough");
             }
             double x1 = (Math.PI / 2 * pars[0]), x2 = (Math.PI / 2 * pars[1]), x = Lerp(x1, x2, val);
             double y1 = Math.Sin(x1), y2 = Math.Sin(x2), y = Math.Sin(x);
-            if((pars[0] - pars[1]) % 4 == 0 || (pars[0] + pars[1]) % 4 == 2) {
+            if ((pars[0] - pars[1]) % 4 == 0 || (pars[0] + pars[1]) % 4 == 2) {
                 return y - y1;
             }
             return (y - y1) / (y2 - y1);
