@@ -49,7 +49,7 @@ public class ForOneAdvertisementSystem {
     /// <summary>
     /// 此模块的版本
     /// </summary>
-    public static Version Version => new(1, 3, 1);
+    public static Version Version => new(1, 3, 1, 1);
 
     /// <summary>
     /// 是否被加载了
@@ -127,13 +127,13 @@ public class ForOneAdvertisementSystem {
         public const string DisplayNameGetter = "DisplayNameGetter";
     }
     static string GetName(ModPack modPack) {
-        if (modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.DisplayNameGetter) && modPack.Value.ExtraValue[ExtraDataKeys.DisplayNameGetter] is Delegate dele && dele.TryCastDelegate<Func<string>>(out var getter) && getter != null) {
+        if (modPack.Value.ExtraValue.TryGetValue(ExtraDataKeys.DisplayNameGetter, out var getterObj) && getterObj is Delegate dele && dele.TryCastDelegate<Func<string>>(out var getter)) {
             return getter();
         }
-        if (modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.LocalizedDisplayName) && modPack.Value.ExtraValue[ExtraDataKeys.LocalizedDisplayName] is LocalizedText localizedText) {
+        if (modPack.Value.ExtraValue.TryGetValue(ExtraDataKeys.LocalizedDisplayName, out var localizedTextObj) && localizedTextObj is LocalizedText localizedText) {
             return localizedText.Value;
         }
-        if (modPack.Value.ExtraValue.ContainsKey(ExtraDataKeys.DisplayName) && modPack.Value.ExtraValue[ExtraDataKeys.DisplayName] is string displayName) {
+        if (modPack.Value.ExtraValue.TryGetValue(ExtraDataKeys.DisplayName, out var displayNameObj) && displayNameObj is string displayName) {
             return displayName;
         }
         return modPack.Value.Mod.DisplayName;
@@ -330,17 +330,17 @@ public class ForOneAdvertisementSystem {
             if (localizations == null) {
                 return string.Empty;
             }
-            if (localizations.ContainsKey(key)) {
-                return localizations[key];
+            if (localizations.TryGetValue(key, out string? value)) {
+                return value;
             }
-            else if (localizations.ContainsKey(defaultKey)) {
-                return localizations[defaultKey];
+            else if (localizations.TryGetValue(defaultKey, out string? defaultValue)) {
+                return defaultValue;
             }
-            else if (localizations.ContainsKey(defaultDefaultKey)) {
-                return localizations[defaultDefaultKey];
+            else if (localizations.TryGetValue(defaultDefaultKey, out string? defaultDefaultValue)) {
+                return defaultDefaultValue;
             }
-            else if (localizations.ContainsKey(defaultDefaultDefaultKey)) {
-                return localizations[defaultDefaultDefaultKey];
+            else if (localizations.TryGetValue(defaultDefaultDefaultKey, out string? defaultDefaultDefaultValue)) {
+                return defaultDefaultDefaultValue;
             }
             else if (localizations.Count > 0) {
                 return localizations.Values.First();
@@ -366,11 +366,11 @@ public class ForOneAdvertisementSystem {
         }
 
         string templateLocalization = string.Empty;
-        if (contents != null && contents.ContainsKey("Template")) {
-            templateLocalization = GetLocalization(contents["Template"].Localizations);
+        if (contents != null && contents.TryGetValue("Template", out Content? template)) {
+            templateLocalization = GetLocalization(template.Localizations);
         }
-        if (templateLocalization == string.Empty && savedContents != null && savedContents.ContainsKey("Template")) {
-            templateLocalization = GetLocalization(savedContents["Template"].Localizations);
+        if (templateLocalization == string.Empty && savedContents != null && savedContents.TryGetValue("Template", out Content? savedTemplate)) {
+            templateLocalization = GetLocalization(savedTemplate.Localizations);
         }
         if (templateLocalization != string.Empty) {
             localization = templateLocalization.FormatWith(localization);
