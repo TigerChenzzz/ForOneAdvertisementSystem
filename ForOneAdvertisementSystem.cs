@@ -57,7 +57,14 @@ public class ForOneAdvertisementSystem {
     public static bool Loaded { get; private set; }
     private static void OnLoadedOnce()
     {
-
+        if (_showAdvertisementToSet.HasValue)
+        {
+            ShowAdvertisement = _showAdvertisementToSet.Value;
+        }
+        if (_maxShowTimeToSet.HasValue)
+        {
+            MaxShowTimeInFrames = _maxShowTimeToSet.Value;
+        }
     }
 
     private static bool? _showAdvertisementToSet;
@@ -101,8 +108,9 @@ public class ForOneAdvertisementSystem {
             if (!Loaded)
             {
                 _maxShowTimeToSet = value;
+                return;
             }
-            ExtraData["MaxShowTime"] = 1200;
+            ExtraData["MaxShowTime"] = value;
         }
     }
     /// <summary>
