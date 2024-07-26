@@ -49,7 +49,7 @@ public class ForOneAdvertisementSystem {
     /// <summary>
     /// 此模块的版本
     /// </summary>
-    public static Version Version => new(1, 3, 1, 1);
+    public static Version Version => new(1, 3, 1, 2);
 
     /// <summary>
     /// 是否被加载了
@@ -268,8 +268,11 @@ public class ForOneAdvertisementSystem {
 
     static void CancelLoad() {
         cancellationTokenSource?.Cancel();
-        loadTask?.Dispose();
-        loadTask = null;
+        if (loadTask != null) {
+            loadTask.Wait();
+            loadTask.Dispose();
+            loadTask = null;
+        }
         Unhook();
     }
     #endregion
@@ -439,8 +442,11 @@ public class ForOneAdvertisementSystem {
     }
     static void UnloadThis() {
         cancellationTokenSource?.Cancel();
-        loadTask?.Dispose();
-        loadTask = null;
+        if (loadTask != null) {
+            loadTask.Wait();
+            loadTask.Dispose();
+            loadTask = null;
+        }
         Unhook();
         Mods?.Clear();
         ExtraData?.Clear();
