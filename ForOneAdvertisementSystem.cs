@@ -268,11 +268,7 @@ public class ForOneAdvertisementSystem {
 
     static void CancelLoad() {
         cancellationTokenSource?.Cancel();
-        if (loadTask != null) {
-            loadTask.Wait();
-            loadTask.Dispose();
-            loadTask = null;
-        }
+        loadTask = null;
         Unhook();
     }
     #endregion
@@ -442,11 +438,7 @@ public class ForOneAdvertisementSystem {
     }
     static void UnloadThis() {
         cancellationTokenSource?.Cancel();
-        if (loadTask != null) {
-            loadTask.Wait();
-            loadTask.Dispose();
-            loadTask = null;
-        }
+        loadTask = null;
         Unhook();
         Mods?.Clear();
         ExtraData?.Clear();
