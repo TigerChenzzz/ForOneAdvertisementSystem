@@ -49,7 +49,7 @@ public class ForOneAdvertisementSystem {
     /// <summary>
     /// 此模块的版本
     /// </summary>
-    public static Version Version => new(1, 3, 1, 2);
+    public static Version Version => new(1, 3, 1, 3);
 
     /// <summary>
     /// 是否被加载了
